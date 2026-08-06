@@ -1,6 +1,7 @@
 const storage = require('../../utils/storage')
 const health = require('../../utils/health')
 const imageService = require('../../utils/image-service')
+const share = require('../../utils/share')
 
 function withRecipeCover(recipe) {
   if (!recipe) return recipe
@@ -45,7 +46,19 @@ Page({
   },
 
   onShow() {
+    share.enableShareMenu()
     this.loadHealthData()
+  },
+
+  onShareAppMessage() {
+    return share.appMessage({
+      title: '记录 BMI，获取日常饮食搭配建议',
+      path: '/pages/health/health'
+    })
+  },
+
+  onShareTimeline() {
+    return share.timeline({ title: '今日食签｜BMI 记录与日常饮食建议' })
   },
 
   onReady() {

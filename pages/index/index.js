@@ -2,6 +2,7 @@ const storage = require('../../utils/storage')
 const health = require('../../utils/health')
 const imageService = require('../../utils/image-service')
 const community = require('../../utils/community')
+const share = require('../../utils/share')
 const { MEAL_TYPES, CUISINES } = require('../../data/recipes')
 
 function getRecipeCoverImage(recipe) {
@@ -50,6 +51,7 @@ Page({
   },
 
   onShow() {
+    share.enableShareMenu()
     // 首屏只渲染 16 张卡片，滚动到底再增量加载，降低千级菜谱的首屏布局与图片请求压力。
     this.pageSize = 16
     this.loadPage()
@@ -84,6 +86,14 @@ Page({
 
   onUnload() {
     this.clearSearchTimer()
+  },
+
+  onShareAppMessage() {
+    return share.appMessage({ title: '今天吃什么？来「今日食签」找道好菜' })
+  },
+
+  onShareTimeline() {
+    return share.timeline({ title: '今天吃什么？家常菜谱与健康饮食推荐' })
   },
 
   loadPage() {

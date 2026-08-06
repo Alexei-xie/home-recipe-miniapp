@@ -1,5 +1,7 @@
 {
   "navigationBarTitleText": "今日食签",
+  "enableShareAppMessage": true,
+  "enableShareTimeline": true,
   "enablePullDownRefresh": true,
   "backgroundTextStyle": "dark"
 }

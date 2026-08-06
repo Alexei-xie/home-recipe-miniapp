@@ -2,6 +2,7 @@ const storage = require('../../utils/storage')
 const health = require('../../utils/health')
 const { DRAW_POOLS } = require('../../data/recipes')
 const imageService = require('../../utils/image-service')
+const share = require('../../utils/share')
 
 function toRollingRecipe(recipe) {
   return {
@@ -35,7 +36,19 @@ Page({
   },
 
   onShow() {
+    share.enableShareMenu()
     this.refresh()
+  },
+
+  onShareAppMessage() {
+    return share.appMessage({
+      title: '不知道吃什么？让「今日食签」帮你抽一道',
+      path: '/pages/draw/draw'
+    })
+  },
+
+  onShareTimeline() {
+    return share.timeline({ title: '选择困难？随机抽取今天的菜谱' })
   },
 
   onHide() {
