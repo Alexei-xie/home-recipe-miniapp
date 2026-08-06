@@ -1,0 +1,65 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/draw/draw",
+    "pages/health/health",
+    "pages/library/library",
+    "pages/profile/profile",
+    "pages/planner/planner",
+    "pages/cook/cook",
+    "pages/detail/detail",
+    "pages/editor/editor",
+    "pages/notifications/notifications",
+    "pages/privacy/privacy",
+    "pages/bmi-info/bmi-info",
+    "pages/special-health/special-health"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#2f6f4e",
+    "navigationBarTitleText": "今日食签",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f6f4ef",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#8a8a82",
+    "selectedColor": "#2f6f4e",
+    "backgroundColor": "#fffdf8",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "assets/tabbar/home.png",
+        "selectedIconPath": "assets/tabbar/home-active.png"
+      },
+      {
+        "pagePath": "pages/draw/draw",
+        "text": "抽食谱",
+        "iconPath": "assets/tabbar/draw.png",
+        "selectedIconPath": "assets/tabbar/draw-active.png"
+      },
+      {
+        "pagePath": "pages/health/health",
+        "text": "健康记录",
+        "iconPath": "assets/tabbar/health.png",
+        "selectedIconPath": "assets/tabbar/health-active.png"
+      },
+      {
+        "pagePath": "pages/library/library",
+        "text": "收藏菜谱",
+        "iconPath": "assets/tabbar/profile.png",
+        "selectedIconPath": "assets/tabbar/profile-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "assets/tabbar/profile.png",
+        "selectedIconPath": "assets/tabbar/profile-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

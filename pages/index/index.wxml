@@ -1,0 +1,186 @@
+<view class="page">
+  <view class="hero card">
+    <image class="hero-image" src="/assets/home-hero.jpg" mode="aspectFill" />
+    <view class="hero-shade"></view>
+    <view class="hero-text">
+      <text class="eyebrow">TODAY'S TABLE</text>
+      <view class="hero-title">今天，认真吃顿饭</view>
+      <view class="hero-copy">家常菜、健康方向和一点随机惊喜。</view>
+    </view>
+  </view>
+
+  <view wx:if="{{hasHealthRecommendation}}" class="health-card card">
+    <view class="health-top">
+      <view>
+        <text class="health-kicker">当前 BMI</text>
+        <view><text class="bmi-number">{{recommendation.bmiText}}</text><text class="tag">{{recommendation.categoryLabel}}</text></view>
+      </view>
+      <view class="mini-link" bindtap="goHealth">更新记录 ›</view>
+    </view>
+    <view class="health-direction">{{recommendation.direction}}</view>
+    <view wx:if="{{recommendation.mealCombination.length}}" class="combo-row">
+      <view
+        wx:for="{{recommendation.mealCombination}}"
+        wx:key="label"
+        class="combo-item"
+        data-id="{{item.recipe.id}}"
+        bindtap="openComboRecipe"
+      >
+        <image wx:if="{{item.recipe.coverImage}}" class="combo-image" src="{{item.recipe.coverImage}}" mode="aspectFill" data-id="{{item.recipe.id}}" data-src="{{item.recipe.coverImage}}" data-index="{{index}}" binderror="onComboImageError" />
+        <text wx:else class="combo-emoji">{{item.recipe.coverEmoji}}</text>
+        <text class="combo-label">{{item.label}}</text>
+        <text class="combo-name">{{item.recipe.name}}</text>
+      </view>
+    </view>
+    <view wx:if="{{recommendation.mealCombination.length}}" class="combo-plan-link" bindtap="addRecommendedMealToPlan">将这 {{recommendation.mealCombination.length}} 道加入今日菜单　›</view>
+  </view>
+
+  <view wx:else class="health-empty card" bindtap="goHealth">
+    <view class="health-empty-icon">📏</view>
+    <view class="health-empty-copy">
+      <view class="health-empty-title">{{healthEmptyTitle}}</view>
+      <view class="muted">{{healthEmptyText}}</view>
+    </view>
+    <text>›</text>
+  </view>
+
+  <view class="draw-banner" bindtap="goDraw">
+    <view>
+      <view class="draw-title">不知道吃什么？</view>
+      <view class="draw-copy">交给随机签，替你做一次决定</view>
+    </view>
+    <view class="draw-dice">🎲</view>
+  </view>
+
+  <view class="planner-banner card">
+    <view class="planner-entry" data-tab="plan" bindtap="goPlanner">
+      <text class="planner-entry-icon">🍽️</text>
+      <view><view class="planner-banner-title">今日菜单 <text wx:if="{{todayPlanCount}}" class="planner-count">{{todayPlanCount}}</text></view><view class="planner-banner-copy">安排今天要吃的菜</view></view>
+      <text class="planner-entry-arrow">›</text>
+    </view>
+    <view class="planner-divider"></view>
+    <view class="planner-entry" data-tab="shopping" bindtap="goPlanner">
+      <text class="planner-entry-icon">🧺</text>
+      <view><view class="planner-banner-title">采购清单 <text wx:if="{{shoppingListCount}}" class="planner-count">{{shoppingListCount}}</text></view><view class="planner-banner-copy">未购买食材一目了然</view></view>
+      <text class="planner-entry-arrow">›</text>
+    </view>
+  </view>
+
+  <view class="search-bar">
+    <text class="search-icon">⌕</text>
+    <input placeholder="搜索菜名、食材或标签" value="{{searchQuery}}" bindinput="onSearchInput" />
+    <text wx:if="{{searchQuery}}" class="search-clear" bindtap="clearFilters">×</text>
+  </view>
+
+  <view class="pantry-box {{pantryVisible ? 'expanded' : ''}}">
+    <view class="pantry-toggle" bindtap="togglePantry">
+      <view><text class="pantry-title">🥕 我家有什么</text><text class="pantry-summary">{{pantryIngredients.length ? pantryIngredients.join('、') : '按现有食材找菜'}}</text></view>
+      <text>{{pantryVisible ? '收起' : '填写'}}　›</text>
+    </view>
+    <view wx:if="{{pantryVisible}}" class="pantry-editor">
+      <input placeholder="例如：鸡蛋、番茄、豆腐" value="{{pantryInput}}" bindinput="onPantryInput" />
+      <button class="pantry-apply" bindtap="applyPantry">按这些食材找菜</button>
+    </view>
+  </view>
+
+  <scroll-view scroll-x class="chips-scroll">
+    <view class="chips">
+      <view class="chip {{activeMealType === '' ? 'active' : ''}}" data-value="" bindtap="chooseMealType">全部</view>
+      <view
+        wx:for="{{mealTypes}}"
+        wx:key="*this"
+        class="chip {{activeMealType === item ? 'active' : ''}}"
+        data-value="{{item}}"
+        bindtap="chooseMealType"
+      >{{item}}</view>
+    </view>
+  </scroll-view>
+
+  <scroll-view scroll-x class="chips-scroll cuisine-scroll">
+    <view class="chips">
+      <view class="chip cuisine-chip {{activeCuisine === '' ? 'active' : ''}}" data-value="" bindtap="chooseCuisine">全部菜系</view>
+      <view
+        wx:for="{{cuisines}}"
+        wx:key="*this"
+        class="chip cuisine-chip {{activeCuisine === item ? 'active' : ''}}"
+        data-value="{{item}}"
+        bindtap="chooseCuisine"
+      >{{item}}</view>
+    </view>
+  </scroll-view>
+
+  <view class="list-heading">
+    <view>
+      <view class="section-title list-title">常见家常菜</view>
+      <view wx:if="{{totalRecipeCount}}" class="list-count">已加载 {{loadedRecipeCount}} / {{totalRecipeCount}} 道</view>
+      <view class="community-sync-hint">下拉同步公共菜谱<text wx:if="{{communityRecipeCount}}"> · 已缓存 {{communityRecipeCount}} 道</text></view>
+    </view>
+    <scroll-view scroll-x class="sort-scroll">
+      <view class="sort-options">
+        <view
+          wx:for="{{sortOptions}}"
+          wx:key="value"
+          class="sort-option {{activeSort === item.value ? 'active' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="chooseSort"
+        >{{item.label}}</view>
+      </view>
+    </scroll-view>
+  </view>
+  <view wx:if="{{hasActiveFilters}}" class="filter-state">
+    <text>正在查看：{{filterSummary}}</text>
+    <text class="filter-reset" bindtap="clearFilters">清除筛选</text>
+  </view>
+  <view wx:if="{{visibleRecipes.length}}" class="recipe-grid">
+    <view
+      wx:for="{{visibleRecipes}}"
+      wx:key="id"
+      class="recipe-card card"
+      data-id="{{item.id}}"
+      bindtap="openRecipe"
+    >
+      <image
+        wx:if="{{item.coverImage}}"
+        class="recipe-cover-image"
+        src="{{item.coverImage}}"
+        mode="aspectFill"
+        lazy-load
+        data-id="{{item.id}}"
+        data-src="{{item.coverImage}}"
+        data-index="{{index}}"
+        binderror="onRecipeImageError"
+      />
+      <view wx:else class="recipe-cover">{{item.coverEmoji}}</view>
+      <view class="recipe-card-body">
+        <view class="recipe-name-row">
+          <view class="recipe-name">{{item.name}}</view>
+          <view wx:if="{{item.sourceLabel}}" class="recipe-source-badge">{{item.sourceLabel}}</view>
+        </view>
+        <view class="recipe-card-meta">
+          <text>{{item.mealType}}</text>
+          <text>{{item.cuisine || '家常菜'}} · {{item.durationMinutes}} 分钟</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view wx:if="{{visibleRecipes.length && loadedRecipeCount < totalRecipeCount}}" class="load-more-hint">继续下滑，加载更多菜谱</view>
+  <view wx:if="{{!isLoading && !visibleRecipes.length}}" class="empty card">
+    <text class="empty-emoji">🥣</text>
+    <view>没有符合当前筛选条件的菜谱</view>
+    <view class="muted">可以调整分类、搜索词或忌口设置</view>
+    <button wx:if="{{hasActiveFilters}}" class="btn btn-secondary btn-small empty-action" bindtap="clearFilters">清除筛选</button>
+  </view>
+</view>
+
+<view wx:if="{{introVisible}}" class="modal-mask">
+  <view class="modal-box">
+    <view class="intro-icon">🌿</view>
+    <view class="modal-title">欢迎来到「今日食签」</view>
+    <view class="intro-copy">这里可以浏览家常菜、随机抽一道，也可以记录身高体重获得一般性的饮食方向。</view>
+    <view class="privacy-note">健康记录和偏好只保存在当前设备。只有用户主动投稿时，菜谱、昵称副本及所选封面才会上传云端审核；可在通知页撤回或删除。成人 BMI、儿童筛查和孕期增重范围均不构成诊断或个体化营养处方。</view>
+    <view class="modal-actions">
+      <button class="btn btn-secondary" bindtap="closeIntro">先逛逛</button>
+      <button class="btn btn-primary" bindtap="goHealthFromIntro">记录身体数据</button>
+    </view>
+  </view>
+</view>

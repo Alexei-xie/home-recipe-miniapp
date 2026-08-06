@@ -1,0 +1,70 @@
+<view class="page draw-page">
+  <view class="draw-header">
+    <text class="draw-eyebrow">LET FATE DECIDE</text>
+    <view class="draw-heading">今日食签</view>
+    <view class="draw-subheading">选一个范围，剩下的交给运气。</view>
+  </view>
+
+  <scroll-view scroll-x class="pool-scroll">
+    <view class="pool-row">
+      <view
+        wx:for="{{pools}}"
+        wx:key="*this"
+        class="pool-chip {{activePool === item ? 'active' : ''}}"
+        data-pool="{{item}}"
+        bindtap="choosePool"
+      >{{item}}</view>
+    </view>
+  </scroll-view>
+
+  <view class="draw-stage card {{rolling ? 'rolling' : ''}}">
+    <view wx:if="{{rolling && rollingRecipe}}" class="rolling-result">
+      <view class="stage-emoji">{{rollingRecipe.coverEmoji}}</view>
+      <view class="stage-name">{{rollingRecipe.name}}</view>
+      <view class="muted">正在替你挑选…</view>
+    </view>
+    <view wx:elif="{{result}}" class="final-result">
+      <view class="result-ribbon">就吃这个</view>
+      <image wx:if="{{result.coverImage}}" class="result-image" src="{{result.coverImage}}" mode="aspectFill" data-id="{{result.id}}" data-src="{{result.coverImage}}" binderror="onResultImageError" />
+      <view wx:else class="stage-emoji">{{result.coverEmoji}}</view>
+      <view class="stage-name">{{result.name}}</view>
+      <view class="result-tags">
+        <text class="tag">{{result.mealType}}</text>
+        <text class="tag tag-warm">{{result.durationMinutes}} 分钟</text>
+      </view>
+      <view class="result-desc">{{result.description}}</view>
+      <button class="btn btn-secondary result-detail" data-id="{{result.id}}" bindtap="openRecipe">查看做法</button>
+    </view>
+    <view wx:else class="draw-placeholder">
+      <view class="stage-emoji">🎲</view>
+      <view class="stage-name">{{activePool}}</view>
+      <view class="muted">当前有 {{candidateCount}} 道可选</view>
+    </view>
+  </view>
+
+  <button class="draw-button {{rolling ? 'disabled' : ''}}" disabled="{{rolling}}" bindtap="startDraw">
+    {{rolling ? '正在抽取…' : (result ? '再抽一次' : '帮我选')}}
+  </button>
+  <view class="draw-note">过敏原和忌口始终会被过滤；BMI 不限制随机抽取。</view>
+
+  <view wx:if="{{history.length}}" class="history-heading">
+    <view class="section-title">最近抽到</view>
+    <button class="clear-history-button" bindtap="clearHistory">清空</button>
+  </view>
+  <view wx:if="{{history.length}}" class="history-list card">
+    <view
+      wx:for="{{history}}"
+      wx:key="drawnAt"
+      class="history-row"
+      data-id="{{item.recipe.id}}"
+      bindtap="openRecipe"
+    >
+      <text class="history-emoji">{{item.recipe.coverEmoji}}</text>
+      <view class="history-main">
+        <view>{{item.recipe.name}}</view>
+        <view class="muted">{{item.pool}}</view>
+      </view>
+      <text class="history-arrow">›</text>
+    </view>
+  </view>
+</view>

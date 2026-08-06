@@ -1,0 +1,284 @@
+.profile-head {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+}
+
+.avatar-button {
+  width: 112rpx;
+  height: 112rpx;
+  margin: 0 24rpx 0 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.avatar-button::after {
+  border: none;
+}
+
+.avatar {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+}
+
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e7efe8;
+  font-size: 56rpx;
+}
+
+.profile-copy {
+  flex: 1;
+}
+
+.profile-title {
+  font-size: 38rpx;
+  font-weight: 800;
+}
+
+.settings-card {
+  padding: 28rpx;
+}
+
+.settings-card .btn-small {
+  margin-left: auto;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 26rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #edf0ed;
+}
+
+.setting-help {
+  color: #858d88;
+  font-size: 23rpx;
+}
+
+.allergy-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+  margin-top: 22rpx;
+}
+
+.allergy-chip {
+  padding: 12rpx 20rpx;
+  border: 2rpx solid #e0e5e1;
+  border-radius: 999rpx;
+  color: #68716b;
+  background: #fff;
+  font-size: 24rpx;
+}
+
+.allergy-chip.active {
+  color: #fff;
+  border-color: #2f6f4e;
+  background: #2f6f4e;
+}
+
+.avoided-field {
+  margin-top: 28rpx;
+}
+
+.allergy-warning {
+  margin-top: 24rpx;
+  padding: 18rpx;
+  border-radius: 16rpx;
+  color: #8c5f3d;
+  background: #fff3e4;
+  font-size: 22rpx;
+}
+
+.feedback-card {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding: 26rpx;
+  background: linear-gradient(135deg, #fffdf8, #f0f7ee);
+}
+
+.feedback-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 22rpx;
+  background: #e0f0e1;
+  font-size: 40rpx;
+}
+
+.feedback-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.feedback-title {
+  color: #274735;
+  font-weight: 800;
+}
+
+.feedback-copy {
+  margin-top: 5rpx;
+  color: #768179;
+  font-size: 21rpx;
+  line-height: 1.5;
+}
+
+.feedback-button {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 12rpx 18rpx;
+  border: none;
+  border-radius: 16rpx;
+  color: #fff;
+  background: #2f6f4e;
+  font-size: 23rpx;
+  line-height: 1.4;
+}
+
+.feedback-button::after {
+  border: none;
+}
+
+.recipe-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recipe-section-title .section-title {
+  margin-bottom: 12rpx;
+}
+
+.my-recipes {
+  padding: 0 24rpx;
+}
+
+.my-recipe-row {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #edf0ed;
+}
+
+.my-recipe-row:last-child {
+  border-bottom: none;
+}
+
+.my-recipe-open {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.my-recipe-emoji {
+  width: 68rpx;
+  font-size: 42rpx;
+}
+
+.my-recipe-name {
+  font-weight: 700;
+}
+
+.my-recipe-open .muted {
+  font-size: 22rpx;
+}
+
+.favorite-arrow {
+  color: #88a192;
+  font-size: 38rpx;
+}
+
+.favorite-empty {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 26rpx;
+  color: #7d867f;
+  font-size: 24rpx;
+}
+
+.favorite-empty text {
+  color: #d1982e;
+  font-size: 38rpx;
+}
+
+.row-actions {
+  display: flex;
+  gap: 20rpx;
+  color: #2f6f4e;
+  font-size: 24rpx;
+}
+
+.danger-text {
+  color: #b44335;
+}
+
+.data-menu {
+  padding: 0 24rpx;
+}
+
+.menu-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #edf0ed;
+}
+
+.menu-row:last-child {
+  border-bottom: none;
+}
+.notification-entry {
+  display: flex;
+  align-items: center;
+  margin-top: 20rpx;
+  padding: 24rpx;
+}
+
+.notification-icon {
+  flex: 0 0 62rpx;
+  font-size: 40rpx;
+}
+
+.notification-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  color: #2b3d32;
+  font-weight: 800;
+}
+
+.notification-main .muted {
+  margin-top: 5rpx;
+  font-size: 21rpx;
+}
+
+.notification-badge {
+  min-width: 36rpx;
+  margin-left: 12rpx;
+  padding: 2rpx 8rpx;
+  border-radius: 999rpx;
+  color: #fff;
+  background: #d75c46;
+  font-size: 19rpx;
+  line-height: 32rpx;
+  text-align: center;
+}
+
+.notification-arrow {
+  margin-left: 12rpx;
+  color: #8ca094;
+  font-size: 38rpx;
+}

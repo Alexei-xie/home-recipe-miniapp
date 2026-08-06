@@ -1,0 +1,178 @@
+.notification-page {
+  padding-bottom: 48rpx;
+}
+
+.notice-intro {
+  display: flex;
+  align-items: center;
+  padding: 26rpx;
+}
+
+.notice-icon {
+  margin-right: 20rpx;
+  font-size: 56rpx;
+}
+
+.notice-copy, .review-main, .submission-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.notice-title, .review-name, .submission-name {
+  color: #283b30;
+  font-weight: 800;
+}
+
+.notice-copy .muted, .review-main .muted, .submission-main .muted {
+  margin-top: 5rpx;
+  font-size: 21rpx;
+}
+
+.loading-card, .empty-card, .error-card {
+  padding: 28rpx;
+  color: #778079;
+  font-size: 23rpx;
+  line-height: 1.6;
+}
+
+.error-card {
+  color: #a6513e;
+  background: #fff0ea;
+}
+
+.review-card {
+  overflow: hidden;
+  margin-bottom: 20rpx;
+  padding: 0 24rpx;
+}
+
+.review-head, .submission-row {
+  display: flex;
+  align-items: center;
+  min-height: 106rpx;
+}
+
+.recipe-emoji {
+  flex: 0 0 60rpx;
+  width: 60rpx;
+  font-size: 38rpx;
+}
+
+.review-arrow {
+  margin-left: 16rpx;
+  color: #75907e;
+  font-size: 30rpx;
+}
+
+.review-detail {
+  padding: 20rpx 0;
+  border-top: 1rpx solid #edf0ed;
+}
+
+.review-description, .review-text {
+  color: #59655e;
+  font-size: 23rpx;
+  line-height: 1.65;
+}
+
+.review-label {
+  margin-top: 18rpx;
+  color: #2f6f4e;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.review-step {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 12rpx;
+  color: #536057;
+  font-size: 23rpx;
+  line-height: 1.6;
+}
+
+.review-step text {
+  flex: 0 0 36rpx;
+  color: #2f6f4e;
+  font-weight: 800;
+}
+
+.review-actions {
+  display: flex;
+  gap: 14rpx;
+  padding: 18rpx 0 24rpx;
+  border-top: 1rpx solid #edf0ed;
+}
+
+.review-button {
+  flex: 1;
+  min-height: 66rpx;
+  margin: 0;
+  border-radius: 16rpx;
+  font-size: 23rpx;
+  line-height: 66rpx;
+}
+
+.review-button::after {
+  border: none;
+}
+
+.review-button.reject {
+  color: #a94d3c;
+  background: #fff0eb;
+}
+
+.review-button.approve {
+  color: #fff;
+  background: #2f6f4e;
+}
+
+.submission-list {
+  padding: 0 24rpx;
+}
+
+.submission-row {
+  border-bottom: 1rpx solid #edf0ed;
+}
+
+.submission-row:last-child {
+  border-bottom: none;
+}
+
+.status-chip {
+  flex: 0 0 auto;
+  margin-left: 12rpx;
+  padding: 6rpx 13rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  white-space: nowrap;
+}
+
+.submission-delete {
+  flex: 0 0 auto;
+  margin-left: 12rpx;
+  color: #ad5543;
+  font-size: 21rpx;
+}
+
+.status-chip.pending {
+  color: #94681d;
+  background: #fff3d8;
+}
+
+.status-chip.approved {
+  color: #2f6f4e;
+  background: #e8f4ea;
+}
+
+.status-chip.rejected {
+  color: #a24f3d;
+  background: #ffede8;
+}
+
+.review-reason {
+  margin-top: 6rpx;
+  color: #a86a5d;
+  font-size: 18rpx;
+  line-height: 1.45;
+}

@@ -1,0 +1,87 @@
+<view class="page">
+  <view class="intro-card card">
+    <view class="intro-icon">🩺</view>
+    <view class="intro-title">先确认适用人群</view>
+    <view class="intro-copy">不同年龄和生命阶段不能共用成人 BMI 标准。这里提供筛查与一般膳食原则，不自动开具疾病膳食处方。</view>
+  </view>
+
+  <view class="section-title">当前人群</view>
+  <view class="population-list">
+    <view wx:for="{{populationOptions}}" wx:key="key" class="population-card card {{item.selected ? 'active' : ''}}" data-key="{{item.key}}" bindtap="selectPopulation">
+      <view class="population-icon">{{item.icon}}</view>
+      <view class="population-main">
+        <view class="population-label">{{item.label}}</view>
+        <view class="population-help">{{item.help}}</view>
+      </view>
+      <view class="population-check">{{item.selected ? '✓' : ''}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{isChild}}" class="detail-card card">
+    <view class="detail-title">儿童青少年筛查信息</view>
+    <view class="form-group">
+      <text class="form-label">出生日期</text>
+      <picker mode="date" value="{{birthDate}}" end="{{maxBirthDate}}" bindchange="onBirthDateChange">
+        <view class="picker-field">{{birthDate || '请选择出生日期'}}　›</view>
+      </picker>
+    </view>
+    <view class="form-group">
+      <text class="form-label">生物学性别（用于匹配国家筛查表）</text>
+      <view class="sex-options">
+        <view class="sex-option {{biologicalSex === 'male' ? 'active' : ''}}" data-sex="male" bindtap="selectSex">男</view>
+        <view class="sex-option {{biologicalSex === 'female' ? 'active' : ''}}" data-sex="female" bindtap="selectSex">女</view>
+      </view>
+    </view>
+    <view class="field-note">标准仅筛查 6–17 岁超重和肥胖，不能据此诊断偏瘦、营养不良或生长迟缓。</view>
+  </view>
+
+  <view wx:if="{{isPregnant}}" class="detail-card card">
+    <view class="detail-title">单胎妊娠信息</view>
+    <view class="dual-fields">
+      <view class="form-group">
+        <text class="form-label">孕前体重（kg）</text>
+        <input class="form-input" type="digit" maxlength="5" value="{{prePregnancyWeightInput}}" placeholder="例如 55.0" bindinput="onPrePregnancyWeightInput" />
+      </view>
+      <view class="form-group">
+        <text class="form-label">当前孕周</text>
+        <input class="form-input" type="digit" maxlength="4" value="{{gestationalWeekInput}}" placeholder="例如 24" bindinput="onGestationalWeekInput" />
+      </view>
+    </view>
+    <view class="confirm-row">
+      <view>
+        <view>适用通用增重范围</view>
+        <view class="row-help">当前为单胎自然妊娠，且产检未提示需个体化增重管理</view>
+      </view>
+      <switch color="#2f6f4e" checked="{{singletonPregnancyConfirmed}}" bindchange="toggleSingleton" />
+    </view>
+    <view class="field-note">孕前体重建议填写妊娠前 3 个月内的平均体重。参考范围不适用于身高低于 140 cm、孕前体重超过 125 kg，以及需要临床个体化评估的妊娠并发症。</view>
+  </view>
+
+  <view wx:if="{{isPostpartum}}" class="notice-card card">
+    <view class="notice-title">产后不沿用普通成人自动推荐</view>
+    <view>恢复节奏会受到分娩方式、哺乳、睡眠、贫血和其他疾病影响。小程序保留体重记录，但不根据 BMI 自动给出减重套餐。</view>
+  </view>
+
+  <view class="section-title">已确诊或需要关注的状况</view>
+  <view class="section-subtitle">可多选。选中后仅展示权威的一般原则，并暂停 BMI 自动配餐。</view>
+  <view class="condition-card card">
+    <view class="condition-grid">
+      <view wx:for="{{conditionOptions}}" wx:key="key" class="condition-chip {{item.selected ? 'active' : ''}}" data-key="{{item.key}}" bindtap="toggleCondition">{{item.label}}</view>
+    </view>
+    <view wx:if="{{!guidanceItems.length}}" class="no-condition">未选择健康状况</view>
+    <view wx:for="{{guidanceItems}}" wx:key="label" class="guidance-item">
+      <view class="guidance-title">{{item.label}}</view>
+      <view class="guidance-copy">{{item.text}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{populationType !== 'adult'}}" class="boundary-card">
+    <view class="confirm-row boundary-row">
+      <view class="boundary-copy">我理解结果仅用于筛查和健康教育，不能替代儿科、产科或临床营养诊疗</view>
+      <switch color="#2f6f4e" checked="{{specialGuidanceConfirmed}}" bindchange="toggleGuidanceConfirm" />
+    </view>
+  </view>
+
+  <button class="btn btn-primary save-button" bindtap="saveSettings">保存设置</button>
+  <view class="source-note">参考国家卫生健康委相关行业标准和成人高血压、高血糖、高脂血症、高尿酸血症等食养指南。疾病治疗与营养处方应由具备资质的专业人员结合检查结果制定。</view>
+</view>

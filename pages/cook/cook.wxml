@@ -1,0 +1,26 @@
+<view wx:if="{{recipe}}" class="cook-page">
+  <view class="cook-top">
+    <view><text class="cook-kicker">COOKING MODE</text><view class="cook-title">{{recipe.name}}</view></view>
+    <view class="cook-progress">{{stepIndex + 1}} / {{stepCount}}</view>
+  </view>
+  <view wx:if="{{currentStep}}" class="cook-step card">
+    <view class="cook-step-number">{{stepIndex + 1}}</view>
+    <view class="cook-step-text">{{currentStep.text}}</view>
+    <scroll-view wx:if="{{currentStep.images && currentStep.images.length}}" class="cook-step-images" scroll-x>
+      <view class="cook-step-image-row">
+        <image wx:for="{{currentStep.images}}" wx:key="*this" class="cook-step-image" src="{{item}}" mode="aspectFill" data-src="{{item}}" bindtap="previewStepImage" binderror="onStepImageError" />
+      </view>
+    </scroll-view>
+  </view>
+  <view wx:else class="cook-step card"><view class="cook-step-text">这道本地菜谱还没有填写做法步骤，请返回详情页编辑后再开始烹饪。</view></view>
+  <view class="timer-card">
+    <view><view class="timer-label">本次计时</view><view class="timer-value">{{timerText}}</view></view>
+    <button class="timer-button" bindtap="toggleTimer">{{running ? '暂停' : '开始'}}</button>
+  </view>
+  <view class="cook-actions">
+    <button class="btn btn-secondary" disabled="{{stepIndex === 0}}" bindtap="previousStep">上一步</button>
+    <button class="btn btn-primary" disabled="{{stepIndex === stepCount - 1}}" bindtap="nextStep">下一步</button>
+  </view>
+  <button class="finish-button" bindtap="finishCooking">今天做过这道菜</button>
+</view>
+<view wx:else class="empty"><text class="empty-emoji">🍳</text><view>菜谱不存在或已删除</view></view>

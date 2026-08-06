@@ -1,0 +1,214 @@
+<view wx:if="{{recipe}}" class="detail-page">
+  <image wx:if="{{recipe.coverImage}}" class="hero-image" src="{{recipe.coverImage}}" mode="aspectFill" bindtap="previewImage" binderror="onCoverError" data-src="{{recipe.coverImage}}" />
+  <view wx:else class="hero-placeholder">{{recipe.coverEmoji}}</view>
+
+  <view class="detail-content">
+    <view class="source-line">{{recipe.sourceLabel}} · {{recipe.cuisine || '家常菜'}} · {{recipe.mealType}}</view>
+    <view class="detail-title">{{recipe.name}}</view>
+    <view class="tag-row">
+      <text wx:for="{{recipe.healthTags}}" wx:key="*this" class="tag">{{item}}</text>
+    </view>
+    <view class="detail-description">{{recipe.description}}</view>
+
+    <view class="detail-utility-actions">
+      <button class="utility-button {{isFavorite ? 'favorite-active' : ''}}" bindtap="toggleFavorite">{{isFavorite ? '★ 已收藏' : '☆ 收藏'}}</button>
+      <button wx:if="{{recipe.source !== 'custom'}}" class="utility-button" open-type="share">↗ 分享菜谱</button>
+      <button wx:else class="utility-button utility-disabled" disabled>本地菜谱不可分享</button>
+    </view>
+
+    <view class="detail-actions detail-actions-top">
+      <button class="btn btn-secondary" bindtap="drawAgain">再抽一道</button>
+      <button wx:if="{{recipe.source === 'builtin'}}" class="btn btn-primary" bindtap="editBuiltinRecipe">直接修改菜谱</button>
+      <button wx:elif="{{recipe.source === 'community'}}" class="btn btn-primary" bindtap="copyCommunityRecipe">复制到我的菜谱</button>
+      <button wx:else class="btn btn-primary" bindtap="editRecipe">编辑菜谱</button>
+    </view>
+    <view class="meal-actions">
+      <button class="meal-action" bindtap="addToMealPlan">{{isInTodayPlan ? '✓ 已在今日菜单' : '+ 加入今日菜单'}}</button>
+      <button class="meal-action" bindtap="addToShoppingList">🧺 加入采购清单</button>
+      <button class="meal-action meal-action-strong" bindtap="startCooking">🍳 烹饪模式</button>
+    </view>
+    <button wx:if="{{recipe.source === 'builtin' && recipe.isLocalOverride}}" class="btn btn-outline reset-button" bindtap="resetBuiltinRecipe">恢复内置原版</button>
+
+    <view wx:if="{{restrictionReasons.length}}" class="warning-box">
+      ⚠️ 这道菜包含你的过敏或忌口项：{{restrictionText}}。严重过敏时请以食品标签和专业意见为准。
+    </view>
+
+    <view class="facts card">
+      <view><text class="fact-value">{{recipe.durationMinutes}}</text><text class="fact-label">分钟</text></view>
+      <view><text class="fact-value">{{recipe.servings}}</text><text class="fact-label">建议份数</text></view>
+      <view><text class="fact-value">{{recipe.estimatedKcalPerServing || '--'}}</text><text class="fact-label">千卡/份（估算）</text></view>
+      <view><text class="fact-value">{{recipe.difficulty}}</text><text class="fact-label">难度</text></view>
+    </view>
+
+    <view class="serving-card card">
+      <view class="serving-copy">
+        <view class="serving-eyebrow"><text>份量换算</text></view>
+        <view class="serving-title">这次准备几人份？</view>
+        <view class="serving-hint">原配方约 {{recipe.servings}} 人份 · 食材用量与营养数据同步调整</view>
+      </view>
+      <view class="serving-control" aria-label="调整用餐人数">
+        <button class="serving-button {{servingCount <= 1 ? 'disabled' : ''}}" disabled="{{servingCount <= 1}}" aria-label="减少一人" data-delta="-1" bindtap="changeServings">−</button>
+        <view class="serving-count"><text class="serving-number">{{servingCount}}</text><text class="serving-unit">人</text></view>
+        <button class="serving-button serving-button-add {{servingCount >= 12 ? 'disabled' : ''}}" disabled="{{servingCount >= 12}}" aria-label="增加一人" data-delta="1" bindtap="changeServings">+</button>
+      </view>
+    </view>
+
+    <view class="section-title">营养估算</view>
+    <view wx:if="{{nutritionAnalysis}}" class="nutrition-card card">
+      <view wx:if="{{nutritionUsable}}" class="nutrition-grid">
+        <view><text class="nutrition-value">{{nutritionAnalysis.perServing.kcal}}</text><text>千卡/份</text></view>
+        <view><text class="nutrition-value">{{nutritionAnalysis.perServing.protein}}g</text><text>蛋白质</text></view>
+        <view><text class="nutrition-value">{{nutritionAnalysis.perServing.carbs}}g</text><text>碳水</text></view>
+        <view><text class="nutrition-value">{{nutritionAnalysis.perServing.fat}}g</text><text>脂肪</text></view>
+        <view><text class="nutrition-value">{{nutritionAnalysis.perServing.fiber}}g</text><text>膳食纤维</text></view>
+      </view>
+      <view wx:else class="nutrition-insufficient">这道菜的结构化食材或重量不足，暂不展示可能误导的营养数值。</view>
+      <view wx:if="{{nutritionMicroUsable}}" class="micro-title">烹饪后微量营养素（每份）</view>
+      <view wx:if="{{nutritionMicroUsable}}" class="micro-grid">
+        <view><text>{{nutritionAnalysis.perServing.sodium}}mg</text><text>钠</text></view>
+        <view><text>{{nutritionAnalysis.perServing.potassium}}mg</text><text>钾</text></view>
+        <view><text>{{nutritionAnalysis.perServing.calcium}}mg</text><text>钙</text></view>
+        <view><text>{{nutritionAnalysis.perServing.iron}}mg</text><text>铁</text></view>
+        <view><text>{{nutritionAnalysis.perServing.vitaminA}}μg</text><text>维生素A</text></view>
+        <view><text>{{nutritionAnalysis.perServing.vitaminC}}mg</text><text>维生素C</text></view>
+        <view><text>{{nutritionAnalysis.perServing.vitaminE}}mg</text><text>维生素E</text></view>
+        <view><text>{{nutritionAnalysis.perServing.folate}}μg</text><text>叶酸</text></view>
+      </view>
+      <view class="nutrition-quality">
+        食材覆盖 {{nutritionAnalysis.coverage}}% · 微量营养覆盖 {{nutritionAnalysis.microCoverage}}% · 可信度{{nutritionAnalysis.confidence}}
+      </view>
+      <view class="retention-note">已按“{{nutritionAnalysis.cookingMethod}}”应用烹饪保留率修正；烹饪方式识别自菜名和步骤。</view>
+      <view wx:if="{{nutritionAnalysis.unmatched.length}}" class="nutrition-unmatched">尚未计入：{{nutritionUnmatchedText}}</view>
+      <view class="nutrition-source">营养源：{{nutritionAnalysis.source}}；损耗模型：{{nutritionAnalysis.retentionSource}}。品牌、产地和实际火候仍会造成偏差。</view>
+    </view>
+
+    <view class="section-title">食材</view>
+    <view class="ingredient-card card">
+      <view wx:for="{{scaledIngredients}}" wx:key="name" class="ingredient-row">
+        <view class="ingredient-main">
+          <text>{{item.name}}</text>
+          <view wx:if="{{item.note}}" class="ingredient-note">
+            <view class="ingredient-note-label {{item.noteKind === 'safety' ? 'ingredient-note-label-safety' : ''}}">{{item.noteKind === 'safety' ? '安全' : '备料'}}</view>
+            <view class="ingredient-note-copy">{{item.note}}</view>
+          </view>
+        </view>
+        <text class="muted ingredient-amount">{{item.amount}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{missingIngredients.length}}" class="missing-card">
+      <view class="missing-title">根据“我家有什么”判断，可能还缺：</view>
+      <text wx:for="{{missingIngredients}}" wx:key="name" class="missing-tag">{{item.name}}</text>
+      <view class="missing-copy">仅按名称粗略匹配，请按实际库存确认。</view>
+    </view>
+
+    <view wx:if="{{recipe.seasonings.length}}" class="section-title">调味料</view>
+    <view wx:if="{{recipe.seasonings.length}}" class="ingredient-card card">
+      <view wx:for="{{scaledSeasonings}}" wx:key="name" class="ingredient-row">
+        <view class="ingredient-main">
+          <text>{{item.name}}</text>
+          <view wx:if="{{item.note}}" class="ingredient-note">
+            <view class="ingredient-note-label ingredient-note-label-seasoning">用法</view>
+            <view class="ingredient-note-copy">{{item.note}}</view>
+          </view>
+        </view>
+        <text class="muted ingredient-amount">{{item.amount}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{recipe.tutorialLinks && recipe.tutorialLinks.length}}" class="section-title">外部教程参考</view>
+    <view wx:if="{{recipe.tutorialLinks && recipe.tutorialLinks.length}}" class="tutorial-list card">
+      <view
+        wx:for="{{recipe.tutorialLinks}}"
+        wx:key="url"
+        class="tutorial-row"
+        data-url="{{item.url}}"
+        data-title="{{item.title}}"
+        bindtap="copyTutorialLink"
+      >
+        <view class="tutorial-badge">↗</view>
+        <view class="tutorial-main">
+          <view class="tutorial-source">{{item.source || '外部教程'}}</view>
+          <view class="tutorial-title">{{item.title || recipe.name}}</view>
+          <view class="tutorial-hint">点按复制公开链接</view>
+        </view>
+        <text class="tutorial-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="section-title">做法步骤</view>
+    <view class="steps">
+      <view wx:for="{{recipe.steps}}" wx:key="id" class="step">
+        <view class="step-number">{{index + 1}}</view>
+        <view class="step-main">
+          <view>{{item.text}}</view>
+          <view wx:if="{{item.images && item.images.length}}" class="step-image-grid">
+            <image
+              wx:for="{{item.images}}"
+              wx:for-item="stepImage"
+              wx:key="*this"
+              class="step-image"
+              src="{{stepImage}}"
+              mode="aspectFill"
+              data-src="{{stepImage}}"
+              bindtap="previewStepImage"
+              binderror="onStepImageError"
+            />
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{recipe.processImages && recipe.processImages.length}}" class="process-images card">
+      <view class="process-images-title">来源步骤参考图</view>
+      <view class="process-images-hint">图片按原始菜谱顺序展示，未强行对应单一步骤</view>
+      <scroll-view class="process-image-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+        <view class="process-image-row">
+          <image
+            wx:for="{{recipe.processImages}}"
+            wx:key="*this"
+            class="process-image"
+            src="{{item}}"
+            mode="aspectFill"
+            data-src="{{item}}"
+            bindtap="previewStepImage"
+            binderror="onStepImageError"
+          />
+        </view>
+      </scroll-view>
+    </view>
+
+    <view wx:if="{{recipe.tips.length}}" class="section-title">烹饪提示</view>
+    <view wx:if="{{recipe.tips.length}}" class="tips card">
+      <view wx:for="{{recipe.tips}}" wx:key="*this">· {{item}}</view>
+    </view>
+
+    <button class="cooked-button {{isCookedToday ? 'cooked-button-active' : ''}}" bindtap="toggleCookedToday">{{isCookedToday ? '✓ 今天已做过' : '记录：今天做过这道菜'}}</button>
+
+    <view wx:if="{{recipe.allergens.length}}" class="allergens">
+      主要过敏原：{{allergensText}}
+    </view>
+
+    <view wx:if="{{recipe.referenceName}}" class="content-reference" bindtap="copyRecipeReference">
+      内容来源：{{recipe.referenceName}}{{recipe.referenceUrl ? '（点按复制参考链接）' : ''}}
+    </view>
+
+    <view wx:if="{{recipe.videoUrl}}" class="section-title">教学视频</view>
+    <video
+      wx:if="{{recipe.videoUrl && !videoFailed}}"
+      class="video"
+      src="{{recipe.videoUrl}}"
+      controls
+      object-fit="contain"
+      binderror="onVideoError"
+    />
+    <view wx:if="{{videoFailed}}" class="video-fallback">视频暂不可用，请按图文步骤制作。</view>
+
+    <view class="medical-note">营养与热量信息为一般性估算，不构成医学诊断、治疗或个体化营养处方。</view>
+  </view>
+</view>
+
+<view wx:else class="empty">
+  <text class="empty-emoji">🍽️</text>
+  <view>菜谱不存在或已被删除</view>
+</view>
