@@ -160,7 +160,7 @@ function extractFood(name, fdcId, sourceFoods, sourceRelease) {
 Object.keys(FOOD_IDS).forEach(name => extractFood(name, FOOD_IDS[name], foods, 'USDA FoodData Central Foundation Foods 2026-04-30'))
 if (srFoods.length) Object.keys(SR_IDS).forEach(name => extractFood(name, SR_IDS[name], srFoods, 'USDA FoodData Central SR Legacy 2018-04'))
 
-const target = path.resolve(__dirname, '../data/food-micros.js')
+const target = path.resolve(__dirname, '../features/data/food-micros.js')
 const content = `// 此文件由 scripts/build-usda-nutrition.js 从 USDA FoodData Central Foundation Foods / SR Legacy 生成。\n` +
   `// 数据单位均为每100克可食部；USDA FDC 数据按 CC0 发布。\n` +
   `const FOOD_MICROS = ${JSON.stringify(output, null, 2)}\n\nmodule.exports = { FOOD_MICROS }\n`

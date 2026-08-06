@@ -1,7 +1,7 @@
 const storage = require('../../utils/storage')
 const health = require('../../utils/health')
 const imageService = require('../../utils/image-service')
-const nutrition = require('../../utils/nutrition')
+const nutrition = require('../utils/nutrition')
 const community = require('../../utils/community')
 const share = require('../../utils/share')
 

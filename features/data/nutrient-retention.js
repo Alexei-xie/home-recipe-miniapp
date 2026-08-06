@@ -1,4 +1,4 @@
-// 按 USDA Table of Nutrient Retention Factors Release 6 的烹饪方式范围整理的通用保留率。
+// 分包营养分析使用：按 USDA Table of Nutrient Retention Factors Release 6 的烹饪方式范围整理的通用保留率。
 // 这里用于家庭菜谱估算；实际保留率仍会随食材、温度、时间和汤汁是否食用而变化。
 const RETENTION_FACTORS = {
   raw: { label: '不加热/冷制', sodium: 1, potassium: 1, calcium: 1, iron: 1, vitaminA: 1, vitaminC: 1, vitaminE: 1, folate: 1 },
