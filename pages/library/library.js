@@ -19,11 +19,11 @@ Page({
 
   openRecipe(event) {
     const id = event.currentTarget.dataset.id
-    if (id) wx.navigateTo({ url: `/pages/detail/detail?id=${id}` })
+    if (id) wx.navigateTo({ url: `/features/detail/detail?id=${id}` })
   },
 
   addRecipe() {
-    wx.navigateTo({ url: '/pages/editor/editor' })
+    wx.navigateTo({ url: '/features/editor/editor' })
   },
 
   goHome() {
@@ -32,7 +32,7 @@ Page({
 
   editRecipe(event) {
     const id = event.currentTarget.dataset.id
-    if (id) wx.navigateTo({ url: `/pages/editor/editor?id=${id}` })
+    if (id) wx.navigateTo({ url: `/features/editor/editor?id=${id}` })
   },
 
   deleteRecipe(event) {

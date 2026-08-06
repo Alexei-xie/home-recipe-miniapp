@@ -3,16 +3,16 @@
   "packOptions": {
     "ignore": [
       {
-        "type": "folder",
-        "value": "scripts"
+        "value": "scripts",
+        "type": "folder"
       },
       {
-        "type": "file",
-        "value": "README.md"
+        "value": "README.md",
+        "type": "file"
       },
       {
-        "type": "file",
-        "value": "THIRD_PARTY_NOTICES.md"
+        "value": "THIRD_PARTY_NOTICES.md",
+        "type": "file"
       }
     ],
     "include": []
@@ -52,7 +52,7 @@
   "compileType": "miniprogram",
   "cloudfunctionRoot": "cloudfunctions/",
   "miniprogramRoot": "./",
-  "libVersion": "3.3.4",
+  "libVersion": "3.15.0",
   "appid": "touristappid",
   "projectname": "today-eat-miniapp",
   "condition": {},

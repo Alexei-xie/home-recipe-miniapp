@@ -4,20 +4,31 @@ const { RETENTION_FACTORS } = require('../data/nutrient-retention')
 const { getDefaultPackagingRule } = require('../data/packaging-rules')
 
 const MICRO_KEYS = ['sodium', 'potassium', 'calcium', 'iron', 'vitaminA', 'vitaminC', 'vitaminE', 'folate']
+const FOOD_FACT_BY_ALIAS = new Map()
+const FOOD_ALIAS_ENTRIES = []
 
 function normalizeName(value) {
   return String(value || '').replace(/[\s（）()]/g, '').toLowerCase()
 }
 
+FOOD_FACTS.forEach(fact => {
+  ;[fact.name].concat(fact.aliases || []).forEach(alias => {
+    const normalized = normalizeName(alias)
+    if (!normalized) return
+    if (!FOOD_FACT_BY_ALIAS.has(normalized)) FOOD_FACT_BY_ALIAS.set(normalized, fact)
+    FOOD_ALIAS_ENTRIES.push({ normalized, fact })
+  })
+})
+
 function findFoodFact(name) {
   const normalized = normalizeName(name)
   if (!normalized || /^(无|时令配菜|辅助食材|主食基底|饮用水或基底液|清水或高汤)$/.test(normalized)) return null
-  const exact = FOOD_FACTS.find(item => [item.name].concat(item.aliases || []).some(alias => normalized === normalizeName(alias)))
+  const exact = FOOD_FACT_BY_ALIAS.get(normalized)
   if (exact) return exact
-  return FOOD_FACTS.find(item => [item.name].concat(item.aliases || []).some(alias => {
-    const target = normalizeName(alias)
-    return target.length >= 2 && (normalized.includes(target) || target.includes(normalized))
-  })) || null
+  const partial = FOOD_ALIAS_ENTRIES.find(item =>
+    item.normalized.length >= 2 && (normalized.includes(item.normalized) || item.normalized.includes(normalized))
+  )
+  return partial ? partial.fact : null
 }
 
 function amountToGrams(amount, fact) {

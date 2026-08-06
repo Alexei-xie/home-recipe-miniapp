@@ -249,11 +249,11 @@ Page({
   },
 
   openBmiInfo() {
-    wx.navigateTo({ url: '/pages/bmi-info/bmi-info' })
+    wx.navigateTo({ url: '/features/bmi-info/bmi-info' })
   },
 
   openSpecialHealth() {
-    wx.navigateTo({ url: '/pages/special-health/special-health' })
+    wx.navigateTo({ url: '/features/special-health/special-health' })
   },
 
   openTimeRecommendation() {
@@ -303,12 +303,16 @@ Page({
         items
       }
     }, () => {
-      imageService.hydrateRecipes(recommendation.items.map(item => item.recipe), (hydrated, index) => {
-        const current = this.data.timeRecommendation && this.data.timeRecommendation.items[index]
-        if (current && current.recipe.id === hydrated.id) {
-          this.setData({ [`timeRecommendation.items[${index}].recipe.coverImage`]: hydrated.coverImage })
-        }
-      }, 3)
+      imageService.hydrateRecipeCovers(recommendation.items.map(item => item.recipe), null, 3).then(hydratedRecipes => {
+        const patch = {}
+        hydratedRecipes.forEach((hydrated, index) => {
+          const current = this.data.timeRecommendation && this.data.timeRecommendation.items[index]
+          if (current && current.recipe.id === hydrated.id) {
+            patch[`timeRecommendation.items[${index}].recipe.coverImage`] = hydrated.coverImage
+          }
+        })
+        if (Object.keys(patch).length) this.setData(patch)
+      })
     })
   },
 
@@ -346,7 +350,7 @@ Page({
     const id = event.currentTarget.dataset.id
     if (!id) return
     this.closeTimeRecommendation()
-    wx.navigateTo({ url: `/pages/detail/detail?id=${id}` })
+    wx.navigateTo({ url: `/features/detail/detail?id=${id}` })
   },
 
   addTimeRecommendationToPlan() {

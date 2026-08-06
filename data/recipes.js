@@ -211,27 +211,27 @@ function polishStepText(text) {
   return value.replace(/[。；;]?$/, '。').trim()
 }
 
-function expandRecipe(row) {
+function expandRecipe(row, includeDetails = true) {
   const [
     id, name, mealType, cuisine, healthTags, drawPools,
     healthEligible, energyLevel, kcal, servings, durationMinutes,
     difficulty, compactIngredients, allergens, compactSteps, tips, referenceUrl,
     processImageCloudPaths, sourceCoverCloudPath
   ] = row
-  const steps = compactSteps.map((step, index) => {
+  const steps = includeDetails ? compactSteps.map((step, index) => {
     const text = polishStepText(Array.isArray(step) ? step[0] : step)
     const imageCloudPaths = Array.isArray(step) ? step[1] : []
     return { id: `s${index + 1}`, order: index + 1, text, imageCloudPaths, images: [] }
-  })
-  const ingredients = compactIngredients.map(([ingredientName, amount]) => {
-    const note = getIngredientNote(ingredientName, steps)
+  }) : []
+  const ingredients = includeDetails ? compactIngredients.map(([ingredientName, amount]) => {
+    const note = includeDetails ? getIngredientNote(ingredientName, steps) : ''
     return {
       name: ingredientName,
       amount,
       note,
       noteKind: note.startsWith('与即食食材分开处理') ? 'safety' : 'prep'
     }
-  })
+  }) : []
   return {
     id,
     source: 'builtin',
@@ -250,12 +250,12 @@ function expandRecipe(row) {
     ingredients,
     seasonings: [],
     allergens,
-    ingredientKeywords: ingredients.map(item => item.name),
+    ingredientKeywords: compactIngredients.map(item => item[0]),
     steps,
-    processImageCloudPaths: processImageCloudPaths || [],
+    processImageCloudPaths: includeDetails ? (processImageCloudPaths || []) : [],
     sourceCoverCloudPath: sourceCoverCloudPath || '',
     processImages: [],
-    tips,
+    tips: includeDetails ? tips : [],
     coverImage: '',
     coverEmoji: EMOJIS[mealType] || '🍽️',
     videoUrl: '',
@@ -270,7 +270,18 @@ function expandRecipe(row) {
   }
 }
 
-const BUILTIN_RECIPES = COMPACT_RECIPES.map(expandRecipe).concat(OPEN_RECIPES)
+// 列表与推荐仅构建轻量摘要；步骤、备料提示在查看单道菜谱时按需展开。
+const COMPACT_RECIPE_BY_ID = new Map(COMPACT_RECIPES.map(row => [row[0], row]))
+const FULL_RECIPE_CACHE = new Map()
+const BUILTIN_RECIPES = COMPACT_RECIPES.map(row => expandRecipe(row, false)).concat(OPEN_RECIPES)
+
+function getBuiltinRecipe(id) {
+  if (FULL_RECIPE_CACHE.has(id)) return FULL_RECIPE_CACHE.get(id)
+  const row = COMPACT_RECIPE_BY_ID.get(id)
+  const recipe = row ? expandRecipe(row, true) : OPEN_RECIPES.find(item => item.id === id)
+  if (recipe) FULL_RECIPE_CACHE.set(id, recipe)
+  return recipe || null
+}
 
 module.exports = {
   BUILTIN_RECIPES,
@@ -279,5 +290,6 @@ module.exports = {
   HEALTH_TAGS,
   DRAW_POOLS,
   ALLERGENS,
+  getBuiltinRecipe,
   getIngredientNote
 }

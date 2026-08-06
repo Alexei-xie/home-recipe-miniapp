@@ -213,7 +213,7 @@ function buildMealCombination(recipes, categoryKey) {
   return result
 }
 
-function buildHealthRecommendation(recipes, profile, latestWeight) {
+function buildHealthRecommendation(recipes, profile, latestWeight, options = {}) {
   if ((profile.populationType || 'adult') !== 'adult' || getConditionGuidance(profile.healthConditions).some(item => item.blocksRecommendation)) {
     return { bmi: null, category: null, recipes: [], mealCombination: [] }
   }
@@ -222,7 +222,7 @@ function buildHealthRecommendation(recipes, profile, latestWeight) {
   if (!category || !profile.adultConfirmed || !profile.healthRecommendationEnabled) {
     return { bmi, category, recipes: [], mealCombination: [] }
   }
-  const safe = filterRecipesByDietaryRestrictions(recipes, profile)
+  const safe = options.alreadyFiltered ? (recipes || []) : filterRecipesByDietaryRestrictions(recipes, profile)
   const desired = tagsForBmi(category.key)
   let recommended = safe.filter(recipe =>
     recipe.healthEligible &&
@@ -335,8 +335,8 @@ function isProteinFocusedRecipe(recipe) {
   return /鸡|牛|猪|羊|鱼|虾|蟹|贝|蛋|豆腐|豆干|豆皮|豆花|肉|排骨|腊|里脊|猪肝|猪蹄|肉丸|肥肠/.test(text)
 }
 
-function buildTimeBasedRecommendation(recipes, profile, latestWeight, now = new Date(), rotation = 0) {
-  const base = buildHealthRecommendation(recipes, profile, latestWeight)
+function buildTimeBasedRecommendation(recipes, profile, latestWeight, now = new Date(), rotation = 0, baseRecommendation = null) {
+  const base = baseRecommendation || buildHealthRecommendation(recipes, profile, latestWeight)
   if (!base.category) return Object.assign(base, { period: null, items: [] })
 
   const period = getMealPeriod(now)

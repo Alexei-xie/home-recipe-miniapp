@@ -54,16 +54,34 @@ function submitRecipe(recipe, profile) {
 
 function syncPublicRecipes() {
   const current = storage.getCommunitySync()
-  return call('pull', { knownVersion: current.version }).then(data => {
+  const recipes = []
+  const removedIds = []
+
+  function pullPage(params) {
+    return call('pull', params).then(data => {
+      if (data.unchanged) return data
+      // 兼容尚未升级的云函数：旧协议直接返回完整 recipes 数组。
+      if (!data.mode) return data
+      recipes.push(...(data.recipes || []))
+      removedIds.push(...(data.removedIds || []))
+      if (!data.hasMore) return data
+      if (data.mode === 'full') {
+        return pullPage({ knownVersion: 0, cursor: Number(data.nextCursor) || recipes.length })
+      }
+      return pullPage({ knownVersion: Number(data.nextVersion) || params.knownVersion })
+    })
+  }
+
+  return pullPage({ knownVersion: current.version }).then(data => {
     if (!data.unchanged) {
-      storage.replaceCommunityRecipes(data.recipes || [], {
-        version: data.version,
-        syncedAt: Date.now()
-      })
+      const syncInfo = { version: Number(data.version) || current.version, syncedAt: Date.now() }
+      if (!data.mode) storage.replaceCommunityRecipes(data.recipes || [], syncInfo)
+      else if (data.mode === 'full') storage.replaceCommunityRecipes(recipes, syncInfo)
+      else storage.applyCommunityRecipeDelta(recipes, removedIds, syncInfo)
     }
     return {
       unchanged: Boolean(data.unchanged),
-      count: data.unchanged ? storage.getCommunityRecipes().length : (data.recipes || []).length,
+      count: storage.getCommunityRecipes().length,
       version: Number(data.version) || current.version
     }
   })

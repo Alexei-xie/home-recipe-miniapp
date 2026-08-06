@@ -49,8 +49,9 @@ Page({
       })
     })
     const today = storage.getDateKey()
+    const cookedRecipeIds = this.data.selectedDate === today ? storage.getCookedRecipeIds(today) : new Set()
     const planRecipes = storage.getMealPlan(this.data.selectedDate).map(recipe => Object.assign({}, recipe, {
-      isCooked: this.data.selectedDate === today && storage.isRecipeCookedToday(recipe.id)
+      isCooked: cookedRecipeIds.has(recipe.id)
     }))
     this.setData({
       planRecipes,
@@ -94,7 +95,7 @@ Page({
 
   openRecipe(event) {
     const id = event.currentTarget.dataset.id
-    if (id) wx.navigateTo({ url: `/pages/detail/detail?id=${id}` })
+    if (id) wx.navigateTo({ url: `/features/detail/detail?id=${id}` })
   },
 
   removePlanRecipe(event) {

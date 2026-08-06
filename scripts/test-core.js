@@ -1,10 +1,11 @@
 const assert = require('assert')
 const health = require('../utils/health')
-const { BUILTIN_RECIPES } = require('../data/recipes')
+const { BUILTIN_RECIPES, getBuiltinRecipe } = require('../data/recipes')
 const imageService = require('../utils/image-service')
 const nutrition = require('../utils/nutrition')
 const { FOOD_MICROS } = require('../data/food-micros')
 const cloudbase = require('../config/cloudbase')
+const FULL_BUILTIN_RECIPES = BUILTIN_RECIPES.map(recipe => getBuiltinRecipe(recipe.id) || recipe)
 
 function testHealthRules() {
   assert.strictEqual(health.parseMeasurement('168.5'), 168.5)
@@ -171,7 +172,7 @@ function testRecipeIllustrationRules() {
   const allCovers = new Set(BUILTIN_RECIPES.map(recipe => imageService.getBuiltinCartoonCover(recipe)))
   assert(sichuanCovers.size >= 2)
   assert(allCovers.size >= 4)
-  const recipesWithStepImages = BUILTIN_RECIPES.filter(recipe =>
+  const recipesWithStepImages = BUILTIN_RECIPES.map(recipe => getBuiltinRecipe(recipe.id) || recipe).filter(recipe =>
     recipe.processImageCloudPaths.length || recipe.steps.some(step => step.imageCloudPaths.length)
   )
   const stepImageCount = recipesWithStepImages.reduce((total, recipe) =>
@@ -247,7 +248,7 @@ async function testImageRecoveryRules() {
 }
 
 function testIngredientPreparationCopy() {
-  const tomatoEgg = BUILTIN_RECIPES.find(recipe => recipe.name === '番茄炒蛋')
+  const tomatoEgg = FULL_BUILTIN_RECIPES.find(recipe => recipe.name === '番茄炒蛋')
   const tomato = tomatoEgg.ingredients.find(item => item.name === '西红柿')
   const egg = tomatoEgg.ingredients.find(item => item.name === '鸡蛋')
   const oil = tomatoEgg.ingredients.find(item => item.name === '食用油')
@@ -256,39 +257,39 @@ function testIngredientPreparationCopy() {
   assert(egg.note.includes('打入碗中'))
   assert.strictEqual(oil.note, '')
 
-  const mapoTofu = BUILTIN_RECIPES.find(recipe => recipe.name === '麻婆豆腐')
+  const mapoTofu = FULL_BUILTIN_RECIPES.find(recipe => recipe.name === '麻婆豆腐')
   assert(mapoTofu.ingredients.find(item => item.name === '大蒜').note.includes('切碎'))
-  const kungPao = BUILTIN_RECIPES.find(recipe => recipe.name === '宫保鸡丁')
+  const kungPao = FULL_BUILTIN_RECIPES.find(recipe => recipe.name === '宫保鸡丁')
   assert.strictEqual(kungPao.ingredients.find(item => item.name === '鸡精').note, '')
 
-  const eggTart = BUILTIN_RECIPES.find(recipe => recipe.name === '烤蛋挞')
+  const eggTart = FULL_BUILTIN_RECIPES.find(recipe => recipe.name === '烤蛋挞')
   assert.strictEqual(eggTart.ingredients.find(item => item.name === '牛奶').note, '')
 
-  const steamedFish = BUILTIN_RECIPES.find(recipe => recipe.name === '清蒸鲈鱼')
+  const steamedFish = FULL_BUILTIN_RECIPES.find(recipe => recipe.name === '清蒸鲈鱼')
   assert(steamedFish.ingredients.find(item => item.name === '鲈鱼').note.includes('擦干'))
-  const usefulNoteCount = BUILTIN_RECIPES.reduce((total, recipe) =>
+  const usefulNoteCount = FULL_BUILTIN_RECIPES.reduce((total, recipe) =>
     total + recipe.ingredients.filter(item => item.note).length, 0)
-  const templateNoteCount = BUILTIN_RECIPES.reduce((total, recipe) =>
+  const templateNoteCount = FULL_BUILTIN_RECIPES.reduce((total, recipe) =>
     total + recipe.ingredients.filter(item => /按来源配方准备|按来源配方量取|与即食食材分开处理，并按步骤彻底加热/.test(item.note)).length, 0)
-  const awkwardNoteCount = BUILTIN_RECIPES.reduce((total, recipe) =>
+  const awkwardNoteCount = FULL_BUILTIN_RECIPES.reduce((total, recipe) =>
     total + recipe.ingredients.filter(item => /热心摊主|拿自己的小手|随便切切|室温自然解冻\s*5\s*小时/.test(item.note)).length, 0)
   assert(usefulNoteCount > 300)
   assert.strictEqual(templateNoteCount, 0)
   assert.strictEqual(awkwardNoteCount, 0)
 
-  const allSteps = BUILTIN_RECIPES.flatMap(recipe => recipe.steps.map(step => step.text))
+  const allSteps = FULL_BUILTIN_RECIPES.flatMap(recipe => recipe.steps.map(step => step.text))
   assert(allSteps.every(text => !/热心摊主|拿自己的小手|本程序员认为|随便切切|墙角、椅背、桌角/.test(text)))
-  assert(BUILTIN_RECIPES.find(recipe => recipe.name === '砂糖椰子冰沙').steps.some(step => step.text.includes('稳固台面上轻敲')))
-  assert(BUILTIN_RECIPES.find(recipe => recipe.name === '小米粥').steps.some(step => step.text.includes('煮至沸腾')))
-  assert(BUILTIN_RECIPES.find(recipe => recipe.name === '小酥肉').steps.some(step => step.text.includes('炸 3–5 分钟')))
-  assert(BUILTIN_RECIPES.find(recipe => recipe.name === '披萨饼皮').steps.some(step => step.text.includes('8–12 小时')))
-  assert(BUILTIN_RECIPES.find(recipe => recipe.name === '新疆大盘鸡').steps.some(step => step.text.includes('4cm × 4cm')))
+  assert(FULL_BUILTIN_RECIPES.find(recipe => recipe.name === '砂糖椰子冰沙').steps.some(step => step.text.includes('稳固台面上轻敲')))
+  assert(FULL_BUILTIN_RECIPES.find(recipe => recipe.name === '小米粥').steps.some(step => step.text.includes('煮至沸腾')))
+  assert(FULL_BUILTIN_RECIPES.find(recipe => recipe.name === '小酥肉').steps.some(step => step.text.includes('炸 3–5 分钟')))
+  assert(FULL_BUILTIN_RECIPES.find(recipe => recipe.name === '披萨饼皮').steps.some(step => step.text.includes('8–12 小时')))
+  assert(FULL_BUILTIN_RECIPES.find(recipe => recipe.name === '新疆大盘鸡').steps.some(step => step.text.includes('4cm × 4cm')))
   assert(allSteps.every(text => !/\d+g\s*份数|份数\s*\d+(?:\.\d+)?\s*(?:ml|毫升)/i.test(text)))
   assert(allSteps.every(text => !/灵魂料汁|本程序员认为|务必烧开|即可享用–|干米粉/.test(text)))
 }
 
 function testNutritionRules() {
-  const tomatoEgg = BUILTIN_RECIPES.find(recipe => recipe.id === 'r001')
+  const tomatoEgg = FULL_BUILTIN_RECIPES.find(recipe => recipe.id === 'r001')
   const analysis = nutrition.analyzeRecipe(tomatoEgg)
   assert.strictEqual(analysis.coverage, 100)
   assert(analysis.perServing.kcal > 0)
@@ -310,7 +311,7 @@ function testNutritionRules() {
   assert.strictEqual(rawBroccoli.cookingMethod, '不加热/冷制')
   assert.strictEqual(boiledBroccoli.cookingMethod, '水煮/焯煮')
 
-  const wellCoveredRecipes = BUILTIN_RECIPES.filter(recipe => nutrition.analyzeRecipe(recipe).coverage >= 70)
+  const wellCoveredRecipes = FULL_BUILTIN_RECIPES.filter(recipe => nutrition.analyzeRecipe(recipe).coverage >= 70)
   assert(wellCoveredRecipes.length >= 80)
 }
 
@@ -336,7 +337,7 @@ function testStorageRules() {
 
   const storage = require('../utils/storage')
   storage.initStorage()
-  assert.strictEqual(storage.SCHEMA_VERSION, 12)
+  assert.strictEqual(storage.SCHEMA_VERSION, 13)
   assert.strictEqual(storage.getProfile().populationType, 'adult')
   storage.saveProfile({ healthConditions: ['fattyLiver'] })
   assert.deepStrictEqual(storage.getProfile().healthConditions, ['fattyLiver'])
@@ -368,6 +369,9 @@ function testStorageRules() {
   assert.strictEqual(storage.getRecipe('community_test_1').source, 'community')
   assert.strictEqual(storage.getRecipe('community_test_1').publisherName, '投稿人')
   assert.strictEqual(storage.getCommunitySync().version, 3)
+  storage.flushStateSync()
+  assert.strictEqual(memory[storage.COMMUNITY_STORAGE_KEY].length, 1)
+  assert.strictEqual(memory[storage.STORAGE_KEY].communityRecipes, undefined)
   storage.markCommunityNoticesSeen()
   assert(storage.getCommunitySync().noticeSeenAt > 0)
 
