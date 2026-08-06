@@ -1,0 +1,19 @@
+# macOS and editors
+.DS_Store
+.idea/
+.vscode/
+
+# WeChat Developer Tools local preferences
+project.private.config.json
+
+# Dependencies, build output and local environment files
+node_modules/
+miniprogram_npm/
+dist/
+.env
+.env.*
+*.log
+
+# Local credentials and certificates
+*.pem
+*.key
