@@ -8,6 +8,9 @@ App({
       wx.cloud.init({ env: cloudbase.CLOUDBASE_ENV_ID, traceUser: true })
     }
   },
+  onHide() {
+    storage.flushStateSync()
+  },
   globalData: {
     appName: '今日食签'
   }

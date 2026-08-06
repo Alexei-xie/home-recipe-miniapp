@@ -26,6 +26,8 @@ const DEFAULT_CLOUD_URL_TTL_MS = 60 * 60 * 1000
 const CACHE_EXPIRY_GUARD_MS = 60 * 1000
 const cloudUrlCache = Object.create(null)
 const stepImageUrlCache = Object.create(null)
+const cloudCoverInFlight = Object.create(null)
+const stepImageInFlight = Object.create(null)
 
 function canUseCloudCover() {
   return cloudbase.isCloudCoverEnabled() && typeof wx !== 'undefined' && wx.cloud && typeof wx.cloud.getTempFileURL === 'function'
@@ -105,27 +107,35 @@ function loadCloudCovers(recipes, options = {}) {
   )
   if (!pending.length || !canUseCloudCover()) return Promise.resolve(cloudUrlCache)
   const unique = []
+  const waiting = []
   const ids = new Set()
   pending.forEach(recipe => {
-    if (!ids.has(recipe.id)) {
-      ids.add(recipe.id)
-      unique.push(recipe)
-    }
+    if (ids.has(recipe.id)) return
+    ids.add(recipe.id)
+    if (cloudCoverInFlight[recipe.id]) waiting.push(cloudCoverInFlight[recipe.id])
+    else unique.push(recipe)
   })
-  return wx.cloud.getTempFileURL({
-    fileList: unique.map(getPreferredCoverFileId)
-  }).then(result => {
-    ;(result.fileList || []).forEach((file, index) => {
-      const recipe = unique[index]
-      const entry = createCacheEntry(file, recipe && getPreferredCoverFileId(recipe))
-      if (recipe && entry) cloudUrlCache[recipe.id] = entry
-      else if (file) console.warn('[recipe-cover] 云端封面不可用', unique[index].id, file.errMsg || file.status)
+  if (unique.length) {
+    const request = wx.cloud.getTempFileURL({
+      fileList: unique.map(getPreferredCoverFileId)
+    }).then(result => {
+      ;(result.fileList || []).forEach((file, index) => {
+        const recipe = unique[index]
+        const entry = createCacheEntry(file, recipe && getPreferredCoverFileId(recipe))
+        if (recipe && entry) cloudUrlCache[recipe.id] = entry
+        else if (file) console.warn('[recipe-cover] 云端封面不可用', unique[index].id, file.errMsg || file.status)
+      })
+    }).catch(error => {
+      console.warn('[recipe-cover] 获取云端封面失败', error)
     })
-    return cloudUrlCache
-  }).catch(error => {
-    console.warn('[recipe-cover] 获取云端封面失败', error)
-    return cloudUrlCache
-  })
+    unique.forEach(recipe => { cloudCoverInFlight[recipe.id] = request })
+    waiting.push(request.then(() => {
+      unique.forEach(recipe => {
+        if (cloudCoverInFlight[recipe.id] === request) delete cloudCoverInFlight[recipe.id]
+      })
+    }))
+  }
+  return Promise.all(waiting).then(() => cloudUrlCache)
 }
 
 function getCachedStepImage(cloudPath) {
@@ -158,19 +168,27 @@ function hydrateRecipeStepImages(recipe) {
     processImages: []
   }))
   const pending = Array.from(new Set(paths.filter(item => !getCachedStepImage(item))))
-  const request = pending.length
-    ? wx.cloud.getTempFileURL({ fileList: pending.map(item => cloudbase.getRecipeStepImageFileId(item)) })
+  const waiting = pending.map(item => stepImageInFlight[item]).filter(Boolean)
+  const requestPaths = pending.filter(item => !stepImageInFlight[item])
+  if (requestPaths.length) {
+    const request = wx.cloud.getTempFileURL({ fileList: requestPaths.map(item => cloudbase.getRecipeStepImageFileId(item)) })
       .then(result => {
         ;(result.fileList || []).forEach((file, index) => {
-          const cloudPath = pending[index]
+          const cloudPath = requestPaths[index]
           const entry = createCacheEntry(file, cloudbase.getRecipeStepImageFileId(cloudPath))
           if (entry) stepImageUrlCache[cloudPath] = entry
-          else if (file) console.warn('[recipe-step] 步骤图不可用', pending[index], file.errMsg || file.status)
+          else if (file) console.warn('[recipe-step] 步骤图不可用', requestPaths[index], file.errMsg || file.status)
         })
       })
       .catch(error => console.warn('[recipe-step] 获取步骤图失败', error))
-    : Promise.resolve()
-  return request.then(() => Object.assign({}, recipe, {
+    requestPaths.forEach(item => { stepImageInFlight[item] = request })
+    waiting.push(request.then(() => {
+      requestPaths.forEach(item => {
+        if (stepImageInFlight[item] === request) delete stepImageInFlight[item]
+      })
+    }))
+  }
+  return Promise.all(waiting).then(() => Object.assign({}, recipe, {
     steps: steps.map(step => Object.assign({}, step, {
       images: (step.imageCloudPaths || []).map(getCachedStepImage).filter(Boolean)
     })),
@@ -277,6 +295,26 @@ function hydrateRecipe(recipe) {
   })
 }
 
+function hydrateRecipeCover(recipe) {
+  return resolveRecipeImage(recipe).then(image => Object.assign({}, recipe, {
+    coverImage: image ? image.url : (recipe.source === 'builtin' ? '' : recipe.coverImage || ''),
+    imageSourceUrl: '',
+    imageAuthor: '',
+    imageLicense: '',
+    imageTitle: image ? image.title : recipe.name
+  }))
+}
+
+function hydrateRecipeCovers(recipes, onResolved, limit = 24) {
+  const visible = (recipes || []).slice(0, limit)
+  return loadCloudCovers(visible).then(() => Promise.all(visible.map((recipe, index) =>
+    hydrateRecipeCover(recipe).then(hydrated => {
+      if (typeof onResolved === 'function') onResolved(hydrated, index)
+      return hydrated
+    })
+  )))
+}
+
 function hydrateRecipes(recipes, onResolved, limit = 24) {
   const visible = (recipes || []).slice(0, limit)
   return loadCloudCovers(visible).then(() => Promise.all(visible.map((recipe, index) =>
@@ -300,6 +338,8 @@ module.exports = {
   resolveRecipeImage,
   recoverRecipeImage,
   hydrateRecipeStepImages,
+  hydrateRecipeCover,
+  hydrateRecipeCovers,
   hydrateRecipe,
   hydrateRecipes
 }

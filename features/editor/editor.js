@@ -398,7 +398,7 @@ Page({
           wx.hideLoading()
           this.setData({ submitting: false })
           wx.showToast({ title: '已提交审核', icon: 'success' })
-          setTimeout(() => wx.redirectTo({ url: '/pages/notifications/notifications' }), 600)
+          setTimeout(() => wx.redirectTo({ url: '/features/notifications/notifications' }), 600)
         }).catch(error => {
           wx.hideLoading()
           this.setData({ submitting: false })

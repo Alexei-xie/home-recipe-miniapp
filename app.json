@@ -4,15 +4,22 @@
     "pages/draw/draw",
     "pages/health/health",
     "pages/library/library",
-    "pages/profile/profile",
-    "pages/planner/planner",
-    "pages/cook/cook",
-    "pages/detail/detail",
-    "pages/editor/editor",
-    "pages/notifications/notifications",
-    "pages/privacy/privacy",
-    "pages/bmi-info/bmi-info",
-    "pages/special-health/special-health"
+    "pages/profile/profile"
+  ],
+  "subPackages": [
+    {
+      "root": "features",
+      "pages": [
+        "detail/detail",
+        "cook/cook",
+        "editor/editor",
+        "planner/planner",
+        "notifications/notifications",
+        "privacy/privacy",
+        "bmi-info/bmi-info",
+        "special-health/special-health"
+      ]
+    }
   ],
   "window": {
     "navigationBarBackgroundColor": "#2f6f4e",

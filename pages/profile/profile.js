@@ -118,15 +118,15 @@ Page({
   },
 
   openPrivacy() {
-    wx.navigateTo({ url: '/pages/privacy/privacy' })
+    wx.navigateTo({ url: '/features/privacy/privacy' })
   },
 
   openSpecialHealth() {
-    wx.navigateTo({ url: '/pages/special-health/special-health' })
+    wx.navigateTo({ url: '/features/special-health/special-health' })
   },
 
   openNotifications() {
-    wx.navigateTo({ url: '/pages/notifications/notifications' })
+    wx.navigateTo({ url: '/features/notifications/notifications' })
   },
 
   clearHealth() {

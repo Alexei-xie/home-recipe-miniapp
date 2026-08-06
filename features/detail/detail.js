@@ -187,7 +187,7 @@ Page({
 
   startCooking() {
     if (!this.data.recipe) return
-    wx.navigateTo({ url: `/pages/cook/cook?id=${this.data.recipe.id}` })
+    wx.navigateTo({ url: `/features/cook/cook?id=${this.data.recipe.id}` })
   },
 
   toggleCookedToday() {
@@ -204,7 +204,7 @@ Page({
     const recipe = this.data.recipe
     return {
       title: recipe ? `分享菜谱：${recipe.name}` : '今日食签菜谱',
-      path: recipe ? `/pages/detail/detail?id=${recipe.id}` : '/pages/index/index'
+      path: recipe ? `/features/detail/detail?id=${recipe.id}` : '/pages/index/index'
     }
   },
 
@@ -258,11 +258,11 @@ Page({
   },
 
   copyRecipe() {
-    wx.navigateTo({ url: `/pages/editor/editor?copy=${this.data.recipe.id}` })
+    wx.navigateTo({ url: `/features/editor/editor?copy=${this.data.recipe.id}` })
   },
 
   editBuiltinRecipe() {
-    wx.navigateTo({ url: `/pages/editor/editor?id=${this.data.recipe.id}&direct=1` })
+    wx.navigateTo({ url: `/features/editor/editor?id=${this.data.recipe.id}&direct=1` })
   },
 
   resetBuiltinRecipe() {
@@ -281,11 +281,11 @@ Page({
   },
 
   editRecipe() {
-    wx.navigateTo({ url: `/pages/editor/editor?id=${this.data.recipe.id}` })
+    wx.navigateTo({ url: `/features/editor/editor?id=${this.data.recipe.id}` })
   },
 
   copyCommunityRecipe() {
-    wx.navigateTo({ url: `/pages/editor/editor?copy=${this.data.recipe.id}` })
+    wx.navigateTo({ url: `/features/editor/editor?copy=${this.data.recipe.id}` })
   },
 
   drawAgain() {

@@ -94,14 +94,15 @@ Page({
     const allRecipes = storage.getAllRecipes()
     const safeRecipes = health.filterRecipesByDietaryRestrictions(allRecipes, state.profile)
     const latestWeight = health.getLatestWeight(state.weightRecords)
-    const recommendation = health.buildHealthRecommendation(allRecipes, state.profile, latestWeight)
+    const recommendation = health.buildHealthRecommendation(safeRecipes, state.profile, latestWeight, { alreadyFiltered: true })
     // 首页与健康记录页共用相同的“当前时段 + 当前 BMI”套餐算法，默认推荐保持一致。
     const timeRecommendation = health.buildTimeBasedRecommendation(
       allRecipes,
       state.profile,
       latestWeight,
       new Date(),
-      0
+      0,
+      recommendation
     )
     const hasHealthRecommendation = Boolean(
       recommendation.category &&
@@ -145,7 +146,7 @@ Page({
       isLoading: false
     }, () => {
       if (this.data.recommendation) {
-        imageService.hydrateRecipes(timeRecommendation.items.map(item => item.recipe), null, 3).then(hydratedRecipes => {
+        imageService.hydrateRecipeCovers(timeRecommendation.items.map(item => item.recipe), null, 3).then(hydratedRecipes => {
           if (loadToken !== this.loadToken || !this.data.recommendation) return
           const patch = {}
           hydratedRecipes.forEach((hydrated, index) => {
@@ -228,7 +229,7 @@ Page({
       totalRecipeCount: list.length
     }, () => {
       // 云端封面只对当前分页按需换取临时地址；未配置云开发时保持本地兜底图。
-      imageService.hydrateRecipes(nextRecipes, null, this.pageSize).then(hydratedRecipes => {
+      imageService.hydrateRecipeCovers(nextRecipes, null, this.pageSize).then(hydratedRecipes => {
         if (renderToken !== this.renderToken) return
         const patch = {}
         hydratedRecipes.forEach((hydrated, offset) => {
@@ -319,7 +320,7 @@ Page({
   },
 
   openRecipe(event) {
-    wx.navigateTo({ url: `/pages/detail/detail?id=${event.currentTarget.dataset.id}` })
+    wx.navigateTo({ url: `/features/detail/detail?id=${event.currentTarget.dataset.id}` })
   },
 
   onRecipeImageError(event) {
@@ -367,7 +368,7 @@ Page({
   },
 
   openComboRecipe(event) {
-    wx.navigateTo({ url: `/pages/detail/detail?id=${event.currentTarget.dataset.id}` })
+    wx.navigateTo({ url: `/features/detail/detail?id=${event.currentTarget.dataset.id}` })
   },
 
   goDraw() {
@@ -380,7 +381,7 @@ Page({
 
   goPlanner(event) {
     const tab = event && event.currentTarget.dataset.tab
-    wx.navigateTo({ url: `/pages/planner/planner${tab ? `?tab=${tab}` : ''}` })
+    wx.navigateTo({ url: `/features/planner/planner${tab ? `?tab=${tab}` : ''}` })
   },
 
   togglePantry() {

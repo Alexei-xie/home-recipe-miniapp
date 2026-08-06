@@ -1,7 +1,27 @@
-const { BUILTIN_RECIPES, CUISINES } = require('../data/recipes')
+const { BUILTIN_RECIPES, CUISINES, getBuiltinRecipe } = require('../data/recipes')
 
 const STORAGE_KEY = 'today_eat_local_data'
-const SCHEMA_VERSION = 12
+const COMMUNITY_STORAGE_KEY = 'today_eat_community_recipes'
+const SCHEMA_VERSION = 13
+const WRITE_DEBOUNCE_MS = 120
+
+let cachedState = null
+let pendingWriteTimer = null
+let hasPendingWrite = false
+let hasPendingCommunityWrite = false
+let shouldPersistCommunityOnInit = true
+let cachedRecipeList = null
+let cachedRecipeById = null
+let cachedCookedByDate = null
+
+function invalidateRecipeCache() {
+  cachedRecipeList = null
+  cachedRecipeById = null
+}
+
+function invalidateCookedCache() {
+  cachedCookedByDate = null
+}
 
 const POPULATION_TYPES = ['adult', 'child', 'pregnant', 'postpartum']
 const HEALTH_CONDITIONS = [
@@ -78,7 +98,14 @@ function normalizeCuisine(cuisine) {
 function safeRead() {
   try {
     const data = wx.getStorageSync(STORAGE_KEY)
-    return data && typeof data === 'object' ? data : null
+    if (!data || typeof data !== 'object') {
+      shouldPersistCommunityOnInit = true
+      return null
+    }
+    const communityRecipes = wx.getStorageSync(COMMUNITY_STORAGE_KEY)
+    shouldPersistCommunityOnInit = !Array.isArray(communityRecipes) || Number(data.schemaVersion) !== SCHEMA_VERSION
+    if (Array.isArray(communityRecipes)) data.communityRecipes = communityRecipes
+    return data
   } catch (error) {
     console.error('读取本地数据失败', error)
     return null
@@ -155,6 +182,8 @@ function normalizeBuiltinOverride(recipe, builtin) {
   })
 }
 
+const BUILTIN_SUMMARY_BY_ID = new Map(BUILTIN_RECIPES.map(recipe => [recipe.id, recipe]))
+
 function normalizeCommunityRecipe(recipe) {
   const normalized = normalizeCustomRecipe(recipe || {})
   return Object.assign(normalized, {
@@ -229,7 +258,7 @@ function migrateLocalData(rawData) {
     : {}
   state.recipeOverrides = {}
   Object.keys(rawOverrides).forEach((id) => {
-    const builtin = BUILTIN_RECIPES.find(item => item.id === id)
+    const builtin = BUILTIN_SUMMARY_BY_ID.get(id)
     if (builtin) state.recipeOverrides[id] = normalizeBuiltinOverride(rawOverrides[id], builtin)
   })
   state.drawHistory = Array.isArray(state.drawHistory) ? state.drawHistory.slice(0, 10) : []
@@ -269,9 +298,12 @@ function migrateLocalData(rawData) {
   return migrateLegacyRecipes(state)
 }
 
-function writeState(state) {
+function writeStateSync(state) {
   try {
-    wx.setStorageSync(STORAGE_KEY, state)
+    const personalState = Object.assign({}, state)
+    delete personalState.communityRecipes
+    wx.setStorageSync(STORAGE_KEY, personalState)
+    hasPendingWrite = false
     return true
   } catch (error) {
     console.error('保存本地数据失败', error)
@@ -280,27 +312,66 @@ function writeState(state) {
   }
 }
 
+function writeCommunityRecipesSync(state) {
+  try {
+    wx.setStorageSync(COMMUNITY_STORAGE_KEY, state.communityRecipes || [])
+    hasPendingCommunityWrite = false
+    return true
+  } catch (error) {
+    console.error('保存社区菜谱缓存失败', error)
+    return false
+  }
+}
+
+function flushStateSync() {
+  if (pendingWriteTimer) clearTimeout(pendingWriteTimer)
+  pendingWriteTimer = null
+  if (!cachedState) return true
+  const personalSaved = !hasPendingWrite || writeStateSync(cachedState)
+  const communitySaved = !hasPendingCommunityWrite || writeCommunityRecipesSync(cachedState)
+  return personalSaved && communitySaved
+}
+
+function scheduleStateWrite() {
+  hasPendingWrite = true
+  if (pendingWriteTimer) clearTimeout(pendingWriteTimer)
+  pendingWriteTimer = setTimeout(() => {
+    pendingWriteTimer = null
+    if (cachedState && hasPendingWrite) writeStateSync(cachedState)
+    if (cachedState && hasPendingCommunityWrite) writeCommunityRecipesSync(cachedState)
+  }, WRITE_DEBOUNCE_MS)
+  return true
+}
+
 function initStorage() {
-  const state = migrateLocalData(safeRead())
-  if (writeState(state)) {
+  invalidateRecipeCache()
+  invalidateCookedCache()
+  cachedState = migrateLocalData(safeRead())
+  const personalInitialized = writeStateSync(cachedState)
+  const communityInitialized = !shouldPersistCommunityOnInit || writeCommunityRecipesSync(cachedState)
+  shouldPersistCommunityOnInit = false
+  const initialized = personalInitialized && communityInitialized
+  if (initialized) {
     try {
       wx.removeStorageSync('recipes')
     } catch (error) {
       console.warn('旧数据标记清理失败', error)
     }
   }
-  return state
+  return cachedState
 }
 
 function getState() {
-  return migrateLocalData(safeRead())
+  if (!cachedState) cachedState = migrateLocalData(safeRead())
+  return cachedState
 }
 
 function updateState(updater) {
   const state = getState()
   const result = updater(state) || state
   result.schemaVersion = SCHEMA_VERSION
-  writeState(result)
+  cachedState = result
+  scheduleStateWrite()
   return result
 }
 
@@ -414,17 +485,20 @@ function saveCustomRecipe(recipe) {
     else state.customRecipes.unshift(normalized)
     return state
   })
+  invalidateRecipeCache()
   return normalized
 }
 
 function deleteCustomRecipe(id) {
-  return updateState((state) => {
+  const recipes = updateState((state) => {
     const target = state.customRecipes.find(item => item.id === id)
     if (target) deleteRecipeFiles(target)
     state.customRecipes = state.customRecipes.filter(item => item.id !== id)
     state.favorites = state.favorites.filter(item => item.recipeId !== id)
     return state
   }).customRecipes
+  invalidateRecipeCache()
+  return recipes
 }
 
 function getCommunityRecipes() {
@@ -440,7 +514,7 @@ function replaceCommunityRecipes(recipes, syncInfo) {
     .map(normalizeCommunityRecipe)
     .filter(recipe => recipe.id && recipe.name && recipe.ingredients.length && recipe.steps.length)
     .slice(0, 1000)
-  return updateState((state) => {
+  const communityRecipes = updateState((state) => {
     state.communityRecipes = normalized
     state.communitySync = {
       version: Math.max(0, Number(syncInfo && syncInfo.version) || 0),
@@ -449,6 +523,28 @@ function replaceCommunityRecipes(recipes, syncInfo) {
     }
     return state
   }).communityRecipes
+  invalidateRecipeCache()
+  hasPendingCommunityWrite = true
+  scheduleStateWrite()
+  return communityRecipes
+}
+
+function applyCommunityRecipeDelta(recipes, removedIds, syncInfo) {
+  const state = getState()
+  const removed = new Set((removedIds || []).map(String))
+  const byId = new Map(state.communityRecipes
+    .filter(recipe => !removed.has(String(recipe.id)))
+    .map(recipe => [String(recipe.id), recipe]))
+  ;(Array.isArray(recipes) ? recipes : []).forEach(rawRecipe => {
+    const recipe = normalizeCommunityRecipe(rawRecipe)
+    if (recipe.id && recipe.name && recipe.ingredients.length && recipe.steps.length) {
+      byId.set(String(recipe.id), recipe)
+    }
+  })
+  const merged = Array.from(byId.values())
+    .sort((a, b) => Number(b.publishedAt || b.updatedAt) - Number(a.publishedAt || a.updatedAt))
+    .slice(0, 1000)
+  return replaceCommunityRecipes(merged, syncInfo)
 }
 
 function markCommunityNoticesSeen() {
@@ -463,23 +559,26 @@ function getRecipeOverrides() {
 }
 
 function saveBuiltinRecipeOverride(recipe) {
-  const builtin = BUILTIN_RECIPES.find(item => item.id === recipe.id)
+  const builtin = BUILTIN_SUMMARY_BY_ID.get(recipe.id)
   if (!builtin) return null
   const normalized = normalizeBuiltinOverride(recipe, builtin)
   updateState((state) => {
     state.recipeOverrides[normalized.id] = normalized
     return state
   })
+  invalidateRecipeCache()
   return normalized
 }
 
 function clearBuiltinRecipeOverride(id) {
-  return updateState((state) => {
+  const overrides = updateState((state) => {
     const target = state.recipeOverrides[id]
     if (target) deleteRecipeFiles(target)
     delete state.recipeOverrides[id]
     return state
   }).recipeOverrides
+  invalidateRecipeCache()
+  return overrides
 }
 
 function deleteUserFile(filePath) {
@@ -496,6 +595,7 @@ function deleteRecipeFiles(recipe) {
 }
 
 function getAllRecipes() {
+  if (cachedRecipeList) return cachedRecipeList
   const state = getState()
   const builtins = BUILTIN_RECIPES.map((recipe) => {
     const override = state.recipeOverrides[recipe.id]
@@ -506,11 +606,16 @@ function getAllRecipes() {
       isLocalOverride: true
     }) : recipe
   })
-  return builtins.concat(state.communityRecipes, state.customRecipes)
+  cachedRecipeList = builtins.concat(state.communityRecipes, state.customRecipes)
+  cachedRecipeById = new Map(cachedRecipeList.map(recipe => [recipe.id, recipe]))
+  return cachedRecipeList
 }
 
 function getRecipe(id) {
-  return getAllRecipes().find(item => item.id === id) || null
+  if (!cachedRecipeById) getAllRecipes()
+  const recipe = cachedRecipeById.get(id) || null
+  if (!recipe || recipe.source !== 'builtin' || recipe.isLocalOverride) return recipe
+  return getBuiltinRecipe(id) || recipe
 }
 
 function getFavorites() {
@@ -518,11 +623,12 @@ function getFavorites() {
 }
 
 function isFavorite(recipeId) {
-  return getFavorites().some(item => item.recipeId === recipeId)
+  return getState().favorites.some(item => item.recipeId === recipeId)
 }
 
 function toggleFavorite(recipeId) {
-  if (!getRecipe(recipeId)) return { favorite: false, favorites: getFavorites() }
+  if (!cachedRecipeById) getAllRecipes()
+  if (!cachedRecipeById.has(recipeId)) return { favorite: false, favorites: getFavorites() }
   const state = updateState((current) => {
     const index = current.favorites.findIndex(item => item.recipeId === recipeId)
     if (index >= 0) current.favorites.splice(index, 1)
@@ -536,8 +642,8 @@ function toggleFavorite(recipeId) {
 }
 
 function getFavoriteRecipes() {
-  const byId = new Map(getAllRecipes().map(recipe => [recipe.id, recipe]))
-  return getFavorites().map(item => byId.get(item.recipeId)).filter(Boolean)
+  if (!cachedRecipeById) getAllRecipes()
+  return getFavorites().map(item => cachedRecipeById.get(item.recipeId)).filter(Boolean)
 }
 
 function getDrawHistory() {
@@ -577,8 +683,8 @@ function savePantryIngredients(items) {
 function getMealPlan(date = getDateKey()) {
   const state = getState()
   const recipeIds = Array.isArray(state.mealPlan[date]) ? state.mealPlan[date] : []
-  const byId = new Map(getAllRecipes().map(recipe => [recipe.id, recipe]))
-  return recipeIds.map(id => byId.get(id)).filter(Boolean)
+  if (!cachedRecipeById) getAllRecipes()
+  return recipeIds.map(id => cachedRecipeById.get(id)).filter(Boolean)
 }
 
 function addRecipeToMealPlan(recipeId, date = getDateKey()) {
@@ -703,18 +809,29 @@ function clearCheckedShoppingItems() {
 }
 
 function markRecipeCooked(recipeId, date = getDateKey()) {
-  return updateState(state => {
+  const history = updateState(state => {
     const index = state.cookedHistory.findIndex(item => item.recipeId === recipeId && item.date === date)
     if (index >= 0) state.cookedHistory.splice(index, 1)
     else state.cookedHistory.unshift({ recipeId, date, createdAt: now() })
     state.cookedHistory = state.cookedHistory.slice(0, 200)
     return state
   }).cookedHistory
+  invalidateCookedCache()
+  return history
+}
+
+function getCookedRecipeIds(date = getDateKey()) {
+  if (!cachedCookedByDate) cachedCookedByDate = new Map()
+  if (!cachedCookedByDate.has(date)) {
+    cachedCookedByDate.set(date, new Set(
+      getState().cookedHistory.filter(item => item.date === date).map(item => item.recipeId)
+    ))
+  }
+  return cachedCookedByDate.get(date)
 }
 
 function isRecipeCookedToday(recipeId) {
-  const today = getDateKey()
-  return getState().cookedHistory.some(item => item.recipeId === recipeId && item.date === today)
+  return getCookedRecipeIds().has(recipeId)
 }
 
 function clearHealthData() {
@@ -745,11 +862,19 @@ function clearDrawHistory() {
 function clearAllPersonalData() {
   const state = getState()
   try {
+    if (pendingWriteTimer) clearTimeout(pendingWriteTimer)
+    pendingWriteTimer = null
+    hasPendingWrite = false
+    hasPendingCommunityWrite = false
     deleteUserFile(state.profile.avatarPath)
     state.customRecipes.forEach(deleteRecipeFiles)
     Object.keys(state.recipeOverrides || {}).forEach(id => deleteRecipeFiles(state.recipeOverrides[id]))
     wx.removeStorageSync(STORAGE_KEY)
+    wx.removeStorageSync(COMMUNITY_STORAGE_KEY)
     wx.removeStorageSync('recipes')
+    cachedState = null
+    invalidateRecipeCache()
+    invalidateCookedCache()
   } catch (error) {
     console.error('清除数据失败', error)
   }
@@ -758,9 +883,11 @@ function clearAllPersonalData() {
 
 module.exports = {
   STORAGE_KEY,
+  COMMUNITY_STORAGE_KEY,
   SCHEMA_VERSION,
   generateId,
   initStorage,
+  flushStateSync,
   getState,
   getProfile,
   saveProfile,
@@ -777,6 +904,7 @@ module.exports = {
   getCommunityRecipes,
   getCommunitySync,
   replaceCommunityRecipes,
+  applyCommunityRecipeDelta,
   markCommunityNoticesSeen,
   getRecipeOverrides,
   saveBuiltinRecipeOverride,
@@ -801,6 +929,7 @@ module.exports = {
   removeShoppingItem,
   clearCheckedShoppingItems,
   markRecipeCooked,
+  getCookedRecipeIds,
   isRecipeCookedToday,
   clearHealthData,
   clearDrawHistory,

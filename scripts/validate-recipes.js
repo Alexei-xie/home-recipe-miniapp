@@ -4,7 +4,8 @@ const {
   CUISINES,
   HEALTH_TAGS,
   DRAW_POOLS,
-  ALLERGENS
+  ALLERGENS,
+  getBuiltinRecipe
 } = require('../data/recipes')
 const fs = require('fs')
 const path = require('path')
@@ -17,8 +18,9 @@ const ids = new Set()
 const names = new Set()
 const stepImagePaths = new Set()
 const sourceCoverPaths = new Set()
+const recipesToValidate = BUILTIN_RECIPES.map(recipe => getBuiltinRecipe(recipe.id) || recipe)
 
-BUILTIN_RECIPES.forEach((recipe) => {
+recipesToValidate.forEach((recipe) => {
   if (ids.has(recipe.id)) errors.push(`${recipe.id}: ID 重复`)
   ids.add(recipe.id)
   if (names.has(recipe.name)) errors.push(`${recipe.id}: 菜名重复 ${recipe.name}`)

@@ -103,7 +103,7 @@ Page({
     this.rollTimer = setInterval(() => {
       this.setData({ rollingRecipe: toRollingRecipe(candidates[index % candidates.length]) })
       index += 1
-    }, 110)
+    }, 180)
     this.finishTimer = setTimeout(() => {
       this.stopRollingTimer()
       const chosen = health.drawRandomRecipe(
@@ -123,7 +123,7 @@ Page({
         rollingRecipe: null,
         result: toResultRecipe(chosen)
       })
-      imageService.hydrateRecipe(chosen).then((hydrated) => {
+      imageService.hydrateRecipeCover(chosen).then((hydrated) => {
         if (this.data.result && this.data.result.id === hydrated.id) {
           this.setData({ 'result.coverImage': hydrated.coverImage || '' })
         }
@@ -142,7 +142,7 @@ Page({
 
   openRecipe(event) {
     const id = event.currentTarget.dataset.id
-    if (id) wx.navigateTo({ url: `/pages/detail/detail?id=${id}` })
+    if (id) wx.navigateTo({ url: `/features/detail/detail?id=${id}` })
   },
 
   clearHistory() {

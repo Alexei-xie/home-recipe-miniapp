@@ -112,14 +112,19 @@ async function getMeta() {
   }
 }
 
-async function incrementVersion() {
+async function getNextVersion() {
+  const current = await getMeta()
+  return Math.max(0, Number(current.version) || 0) + 1
+}
+
+async function commitVersion(version, deletedRecipeId) {
+  const current = await getMeta()
   const time = Date.now()
-  try {
-    await db.collection(META).doc(META_ID).update({ data: { version: command.inc(1), updatedAt: time } })
-  } catch (error) {
-    await db.collection(META).doc(META_ID).set({ data: { version: 1, updatedAt: time } })
-  }
-  return getMeta()
+  const nextVersion = Math.max(Number(version) || 0, Number(current.version) || 0)
+  const deletedRecipes = Array.isArray(current.deletedRecipes) ? current.deletedRecipes.slice(-999) : []
+  if (deletedRecipeId) deletedRecipes.push({ id: deletedRecipeId, version: nextVersion, deletedAt: time })
+  await db.collection(META).doc(META_ID).set({ data: { version: nextVersion, updatedAt: time, deletedRecipes } })
+  return { version: nextVersion, updatedAt: time, deletedRecipes }
 }
 
 async function submit(event, openid) {
@@ -155,26 +160,47 @@ async function pull(event) {
   if (knownVersion && knownVersion === Number(meta.version || 0)) {
     return success({ unchanged: true, version: meta.version, recipes: [] })
   }
-  const recipes = []
-  let offset = 0
-  while (offset < 1000) {
-    const result = await db.collection(PUBLIC_RECIPES).orderBy('publishedAt', 'desc').skip(offset).limit(100).get()
-    recipes.push(...result.data)
-    if (result.data.length < 100) break
-    offset += result.data.length
+  const toRecipe = item => Object.assign({}, item.recipe, {
+    id: item._id,
+    source: 'community',
+    submissionId: item.submissionId,
+    publisherName: item.publisherName,
+    publishedAt: item.publishedAt,
+    createdAt: item.publishedAt,
+    updatedAt: item.updatedAt
+  })
+  if (!knownVersion) {
+    const cursor = Math.max(0, Number(event.cursor) || 0)
+    const result = await db.collection(PUBLIC_RECIPES).orderBy('publishedAt', 'desc').skip(cursor).limit(100).get()
+    return success({
+      unchanged: false,
+      mode: 'full',
+      version: Number(meta.version) || 0,
+      recipes: result.data.map(toRecipe),
+      removedIds: [],
+      hasMore: result.data.length === 100 && cursor + result.data.length < 1000,
+      nextCursor: cursor + result.data.length
+    })
   }
+  const result = await db.collection(PUBLIC_RECIPES)
+    .where({ version: command.gt(knownVersion) })
+    .orderBy('version', 'asc')
+    .limit(100)
+    .get()
+  const lastRecipeVersion = result.data.reduce((value, item) => Math.max(value, Number(item.version) || 0), knownVersion)
+  const hasMore = result.data.length === 100 && lastRecipeVersion < Number(meta.version || 0)
+  const nextVersion = hasMore ? lastRecipeVersion : Number(meta.version) || knownVersion
+  const removedIds = (Array.isArray(meta.deletedRecipes) ? meta.deletedRecipes : [])
+    .filter(item => Number(item.version) > knownVersion && Number(item.version) <= nextVersion)
+    .map(item => item.id)
   return success({
     unchanged: false,
+    mode: 'delta',
     version: Number(meta.version) || 0,
-    recipes: recipes.map(item => Object.assign({}, item.recipe, {
-      id: item._id,
-      source: 'community',
-      submissionId: item.submissionId,
-      publisherName: item.publisherName,
-      publishedAt: item.publishedAt,
-      createdAt: item.publishedAt,
-      updatedAt: item.updatedAt
-    }))
+    recipes: result.data.map(toRecipe),
+    removedIds,
+    hasMore,
+    nextVersion
   })
 }
 
@@ -237,14 +263,16 @@ async function review(event, openid) {
   if (decision === 'reject' && !reason) return failure('REASON_REQUIRED', '驳回时请填写原因')
   if (decision === 'approve') {
     const publicId = `community_${submissionId}`
+    const nextVersion = await getNextVersion()
     await db.collection(PUBLIC_RECIPES).doc(publicId).set({ data: {
       recipe: submission.recipe,
       submissionId,
       publisherName: submission.publisherName || '社区用户',
       publishedAt: time,
-      updatedAt: time
+      updatedAt: time,
+      version: nextVersion
     } })
-    await incrementVersion()
+    await commitVersion(nextVersion)
   }
   await db.collection(SUBMISSIONS).doc(submissionId).update({ data: {
     status: statusValue,
@@ -266,12 +294,14 @@ async function removeSubmission(event, openid) {
   }
   if (!submission || submission.submitterOpenid !== openid) return failure('FORBIDDEN', '只能删除自己的投稿')
   if (submission.status === 'approved') {
+    const publicId = `community_${submissionId}`
+    const nextVersion = await getNextVersion()
     try {
-      await db.collection(PUBLIC_RECIPES).doc(`community_${submissionId}`).remove()
+      await db.collection(PUBLIC_RECIPES).doc(publicId).remove()
     } catch (error) {
       console.warn('[removeSubmission] public recipe missing', submissionId)
     }
-    await incrementVersion()
+    await commitVersion(nextVersion, publicId)
   }
   const coverImage = submission.recipe && submission.recipe.coverImage
   if (/^cloud:\/\//.test(String(coverImage || ''))) {
