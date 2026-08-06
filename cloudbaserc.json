@@ -1,0 +1,16 @@
+{
+  "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
+  "envId": "cloud1-d8gd0cz7te6173bb3",
+  "functionRoot": "cloudfunctions",
+  "functions": [
+    {
+      "name": "recipeCommunity",
+      "description": "菜谱投稿、审核、通知与公共菜谱同步",
+      "handler": "index.main",
+      "runtime": "Nodejs18.15",
+      "timeout": 20,
+      "memorySize": 256,
+      "installDependency": true
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+.editor-intro {
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+  padding: 28rpx;
+}
+
+.editor-icon {
+  font-size: 68rpx;
+}
+
+.editor-title {
+  font-size: 34rpx;
+  font-weight: 800;
+}
+
+.editor-card {
+  padding: 28rpx;
+}
+
+.cover-editor {
+  padding: 24rpx;
+}
+
+.cover-preview, .cover-placeholder {
+  width: 100%;
+  height: 360rpx;
+  border-radius: 20rpx;
+}
+
+.cover-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #edf4e9, #f9eeda);
+  font-size: 96rpx;
+}
+
+.cover-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.cover-help {
+  margin-top: 16rpx;
+  color: #858d88;
+  font-size: 22rpx;
+}
+
+.form-textarea.short {
+  min-height: 120rpx;
+}
+
+.field-help {
+  margin-top: 10rpx;
+  color: #858d88;
+  font-size: 22rpx;
+}
+
+.tutorial-fields .tutorial-input {
+  margin-top: 14rpx;
+}
+
+.editor-field-help {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  line-height: 1.55;
+}
+
+.form-textarea.tall {
+  min-height: 260rpx;
+}
+
+.step-editor {
+  margin-bottom: 20rpx;
+  padding: 20rpx;
+  border: 2rpx solid #e3e7e3;
+  border-radius: 20rpx;
+  background: #fafbf8;
+}
+
+.step-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+
+.step-index {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  color: #fff;
+  background: #2f6f4e;
+  font-weight: 700;
+}
+
+.step-tools {
+  display: flex;
+  gap: 22rpx;
+  color: #2f6f4e;
+  font-size: 23rpx;
+}
+
+.step-textarea {
+  min-height: 130rpx;
+  background: #fff;
+}
+
+.add-step-button {
+  width: 100%;
+}
+
+.dual-fields, .triple-fields {
+  display: flex;
+  gap: 16rpx;
+}
+
+.dual-fields .form-group {
+  flex: 1;
+}
+
+.triple-fields .form-group {
+  width: 33.33%;
+}
+
+.allergy-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.allergy-chip {
+  padding: 11rpx 18rpx;
+  border: 2rpx solid #dfe4df;
+  border-radius: 999rpx;
+  color: #6b746e;
+  font-size: 23rpx;
+}
+
+.allergy-chip.active {
+  color: #fff;
+  border-color: #2f6f4e;
+  background: #2f6f4e;
+}
+
+.health-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 28rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #edf0ed;
+}
+
+.compact-switch {
+  margin-top: 20rpx;
+  padding-top: 18rpx;
+}
+
+.health-switch .muted {
+  font-size: 22rpx;
+}
+
+.save-button {
+  flex: 1;
+  margin: 0;
+}
+
+.save-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 34rpx;
+}
+
+.submit-button {
+  flex: 1.2;
+  margin: 0;
+}
+
+.submission-help {
+  margin: 16rpx 12rpx 0;
+  color: #858d88;
+  font-size: 21rpx;
+  line-height: 1.5;
+  text-align: center;
+}

@@ -1,0 +1,392 @@
+.health-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8rpx 0 28rpx;
+}
+
+.eyebrow {
+  color: #789081;
+  font-size: 19rpx;
+  letter-spacing: 5rpx;
+}
+
+.page-title {
+  margin-top: 6rpx;
+  font-size: 48rpx;
+  font-weight: 800;
+}
+
+.measure-icon {
+  font-size: 74rpx;
+}
+
+.population-entry { display: flex; align-items: center; margin-bottom: 20rpx; padding: 20rpx 24rpx; }
+.population-entry-icon { width: 62rpx; font-size: 38rpx; }
+.population-entry-main { flex: 1; }
+.population-entry-label { color: #839087; font-size: 21rpx; }
+.population-entry-value { color: #294936; font-size: 29rpx; font-weight: 800; }
+.population-entry-arrow { color: #789081; font-size: 42rpx; }
+
+.bmi-card {
+  padding: 30rpx;
+  color: #fff;
+  background: linear-gradient(135deg, #4d8b64, #2e6c49);
+  box-shadow: 0 16rpx 34rpx rgba(43, 103, 70, 0.2);
+}
+
+.bmi-underweight {
+  background: linear-gradient(135deg, #b88945, #987033);
+}
+
+.bmi-overweight {
+  background: linear-gradient(135deg, #c8763d, #a75828);
+}
+
+.bmi-obese {
+  background: linear-gradient(135deg, #a95b4d, #884237);
+}
+
+.bmi-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bmi-caption {
+  font-size: 22rpx;
+  opacity: 0.75;
+}
+
+.bmi-value {
+  font-size: 64rpx;
+  font-weight: 800;
+}
+
+.bmi-status {
+  padding: 10rpx 22rpx;
+  border: 1rpx solid rgba(255,255,255,.35);
+  border-radius: 999rpx;
+}
+
+.bmi-direction {
+  margin-top: 12rpx;
+  font-size: 25rpx;
+  opacity: 0.86;
+}
+
+.bmi-link {
+  margin-top: 18rpx;
+  font-size: 23rpx;
+  opacity: 0.8;
+}
+
+.bmi-recommend-button {
+  width: 100%;
+  margin-top: 22rpx;
+  padding: 17rpx 24rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.48);
+  border-radius: 16rpx;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 25rpx;
+  line-height: 1.4;
+}
+
+.bmi-recommend-button::after {
+  border: none;
+}
+
+.bmi-paused { margin-top: 22rpx; padding: 16rpx 22rpx; border: 1rpx solid rgba(255,255,255,.35); border-radius: 16rpx; background: rgba(255,255,255,.12); font-size: 23rpx; text-align: center; }
+
+.bmi-empty {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 34rpx;
+}
+
+.bmi-empty-icon {
+  font-size: 70rpx;
+  color: #99ad9f;
+}
+
+.bmi-empty-title {
+  font-weight: 700;
+}
+
+.special-result { padding: 30rpx; overflow: hidden; }
+.child-result { background: linear-gradient(145deg, #eef7ed, #fffdf8); }
+.pregnancy-result { background: linear-gradient(145deg, #fff1ec, #fffdf8); }
+.postpartum-result { background: linear-gradient(145deg, #f1effa, #fffdf8); }
+.result-kicker { color: #789081; font-size: 21rpx; font-weight: 800; letter-spacing: 2rpx; }
+.result-heading { display: flex; align-items: center; justify-content: space-between; margin-top: 14rpx; }
+.result-number { color: #2c6646; font-size: 60rpx; font-weight: 800; }
+.result-unit { color: #738078; font-size: 22rpx; }
+.result-badge { padding: 9rpx 16rpx; border-radius: 999rpx; color: #805633; background: #fff0d9; font-size: 22rpx; }
+.result-limits { margin-top: 14rpx; color: #65736a; font-size: 23rpx; }
+.result-direction { margin-top: 16rpx; color: #5f6e65; font-size: 24rpx; line-height: 1.65; }
+.bmi-link.dark { color: #41694f; opacity: 1; }
+.pregnancy-grid { display: flex; flex-wrap: wrap; margin: 20rpx -7rpx 0; }
+.pregnancy-grid view { display: flex; flex-direction: column; width: calc(50% - 14rpx); min-height: 110rpx; margin: 7rpx; padding: 18rpx; border-radius: 17rpx; background: rgba(255,255,255,.76); }
+.pregnancy-grid view text:first-child { color: #9b5d48; font-size: 29rpx; font-weight: 800; }
+.pregnancy-grid view text:last-child { margin-top: 4rpx; color: #8a7b75; font-size: 20rpx; }
+.postpartum-title { margin-top: 16rpx; color: #554b72; font-size: 31rpx; font-weight: 800; }
+
+.record-form {
+  padding: 28rpx;
+  background: linear-gradient(145deg, #fffefb, #f8fbf6);
+}
+
+.dual-fields {
+  display: flex;
+  gap: 18rpx;
+}
+
+.dual-fields .form-group {
+  flex: 1;
+}
+
+.draft-bmi {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -8rpx 0 26rpx;
+  padding: 18rpx 22rpx;
+  border-radius: 16rpx;
+  color: #526159;
+  background: #e8f3e9;
+  font-size: 24rpx;
+}
+
+.draft-bmi-value {
+  color: #2f6f4e;
+  font-weight: 700;
+}
+
+.confirm-panel {
+  margin-bottom: 26rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 18rpx;
+  background: #f1f4ef;
+}
+
+.confirm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 82rpx;
+  border-bottom: 1rpx solid #e3e8e3;
+  font-size: 24rpx;
+}
+
+.confirm-row:last-child {
+  border-bottom: none;
+}
+
+.special-confirm-panel { display: flex; align-items: center; justify-content: space-between; margin-bottom: 26rpx; padding: 22rpx; border-radius: 18rpx; background: #f1f4ef; }
+.special-confirm-title { color: #30533e; font-weight: 800; }
+.special-confirm-panel .muted { font-size: 21rpx; }
+.special-confirm-arrow { color: #799082; font-size: 40rpx; }
+
+.record-form .btn {
+  width: 100%;
+}
+
+.trend-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.trend-title {
+  margin-bottom: 0;
+}
+
+.trend-tabs {
+  display: flex;
+  padding: 5rpx;
+  border-radius: 14rpx;
+  background: #e5e9e5;
+}
+
+.trend-tabs view {
+  padding: 8rpx 16rpx;
+  border-radius: 11rpx;
+  color: #7c847f;
+  font-size: 22rpx;
+}
+
+.trend-tabs .active {
+  color: #2f6f4e;
+  background: #fff;
+}
+
+.trend-card {
+  margin-top: 18rpx;
+  padding: 18rpx 0;
+}
+
+.trend-canvas {
+  width: 100%;
+  height: 300rpx;
+}
+
+.trend-empty {
+  padding: 50rpx 20rpx;
+  text-align: center;
+  color: #8b928e;
+}
+
+.records {
+  padding: 0 24rpx;
+}
+
+.record-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #edf0ed;
+}
+
+.record-row:last-child {
+  border-bottom: none;
+}
+
+.record-weight {
+  font-weight: 700;
+}
+
+.delete-link {
+  padding: 10rpx;
+  border: none;
+  color: #b35d4b;
+  background: transparent;
+  font-size: 24rpx;
+}
+
+.delete-link::after {
+  border: none;
+}
+
+.medical-note {
+  margin-top: 30rpx;
+  padding: 24rpx;
+  border-radius: 18rpx;
+  color: #777f7a;
+  background: #eceeea;
+  font-size: 23rpx;
+}
+
+.condition-summary { margin-top: 30rpx; padding: 28rpx; border-color: #efd4bd; background: #fff9ef; }
+.condition-summary-title { color: #87522f; font-size: 29rpx; font-weight: 800; }
+.condition-summary-copy { margin-top: 7rpx; color: #806f64; font-size: 23rpx; line-height: 1.6; }
+.condition-summary-item { margin-top: 18rpx; padding-top: 17rpx; border-top: 1rpx solid #eee0d3; }
+.condition-summary-item view { color: #75492d; font-weight: 800; }
+.condition-summary-item text { display: block; margin-top: 4rpx; color: #71685f; font-size: 22rpx; line-height: 1.6; }
+.condition-summary .btn { margin-top: 20rpx; margin-left: auto; }
+
+.recommendation-modal {
+  max-width: 650rpx;
+  max-height: 82vh;
+  overflow-y: auto;
+}
+
+.recommendation-kicker {
+  color: #789081;
+  font-size: 21rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+
+.recommendation-summary {
+  display: inline-block;
+  margin-bottom: 14rpx;
+  padding: 7rpx 15rpx;
+  border-radius: 999rpx;
+  color: #2f6f4e;
+  background: #e7f0e9;
+  font-size: 23rpx;
+}
+
+.recommendation-greeting {
+  margin-bottom: 22rpx;
+  color: #526159;
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+
+.recommendation-list {
+  border-top: 1rpx solid #edf0ed;
+}
+
+.recommendation-item {
+  display: flex;
+  align-items: center;
+  min-height: 118rpx;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #edf0ed;
+}
+
+.recommendation-item:active {
+  background: #f5f8f3;
+}
+
+.recommendation-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76rpx;
+  height: 76rpx;
+  margin-right: 18rpx;
+  border-radius: 20rpx;
+  background: #f0f4ee;
+  font-size: 42rpx;
+}
+
+.recommendation-image {
+  flex-shrink: 0;
+  width: 76rpx;
+  height: 76rpx;
+  margin-right: 18rpx;
+  border-radius: 20rpx;
+  background: #f0f4ee;
+}
+
+.recommendation-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.recommendation-slot {
+  color: #789081;
+  font-size: 21rpx;
+}
+
+.recommendation-name {
+  margin-top: 2rpx;
+  color: #203b2c;
+  font-size: 29rpx;
+  font-weight: 700;
+}
+
+.recommendation-meta {
+  margin-top: 3rpx;
+  color: #8a918d;
+  font-size: 21rpx;
+}
+
+.recommendation-arrow {
+  padding-left: 16rpx;
+  color: #7d9685;
+  font-size: 42rpx;
+  line-height: 1;
+}
+
+.recommendation-note {
+  margin-top: 20rpx;
+  color: #7b847e;
+  font-size: 22rpx;
+  line-height: 1.65;
+}

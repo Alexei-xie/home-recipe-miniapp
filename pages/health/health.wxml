@@ -1,0 +1,205 @@
+<view class="page">
+  <view class="health-heading">
+    <view>
+      <text class="eyebrow">BODY NOTES</text>
+      <view class="page-title">健康记录</view>
+      <view class="muted">看见趋势，但不被数字定义。</view>
+    </view>
+    <view class="measure-icon">📐</view>
+  </view>
+
+  <view class="population-entry card" bindtap="openSpecialHealth">
+    <view class="population-entry-icon">🩺</view>
+    <view class="population-entry-main">
+      <view class="population-entry-label">当前适用人群</view>
+      <view class="population-entry-value">{{populationLabel}}</view>
+    </view>
+    <view class="population-entry-arrow">›</view>
+  </view>
+
+  <view wx:if="{{adultMode && bmiInfo}}" class="bmi-card card bmi-{{bmiInfo.key}}">
+    <view class="bmi-main">
+      <view>
+        <text class="bmi-caption">最新 BMI</text>
+        <view class="bmi-value">{{bmiInfo.value}}</view>
+      </view>
+      <view class="bmi-status">{{bmiInfo.label}}</view>
+    </view>
+    <view class="bmi-direction">{{bmiInfo.direction}}</view>
+    <button wx:if="{{!conditionGuidance.length}}" class="bmi-recommend-button" bindtap="openTimeRecommendation">按当前 BMI 推荐这一餐</button>
+    <view wx:else class="bmi-paused">已根据健康状况暂停自动配餐</view>
+    <view class="bmi-link" bindtap="openBmiInfo">了解 BMI 分级与使用边界 ›</view>
+  </view>
+
+  <view wx:elif="{{!adultMode && specialAssessment.type === 'child' && specialAssessment.child}}" class="special-result card child-result">
+    <view class="result-kicker">6–17 岁超重与肥胖筛查</view>
+    <view class="result-heading">
+      <view><text class="result-number">{{specialAssessment.bmiDisplay}}</text><text class="result-unit"> BMI</text></view>
+      <view class="result-badge">{{specialAssessment.child.label}}</view>
+    </view>
+    <view class="result-limits">{{specialAssessment.child.age}} 岁组参考：超重界值 {{specialAssessment.child.overweightLimit}}，肥胖界值 {{specialAssessment.child.obesityLimit}}</view>
+    <view class="result-direction">{{specialAssessment.child.direction}}</view>
+    <view class="bmi-link dark" bindtap="openBmiInfo">了解儿童筛查标准与边界 ›</view>
+  </view>
+
+  <view wx:elif="{{!adultMode && specialAssessment.type === 'pregnant' && specialAssessment.pregnancy}}" class="special-result card pregnancy-result">
+    <view class="result-kicker">单胎妊娠期增重参考</view>
+    <view class="pregnancy-grid">
+      <view><text>{{specialAssessment.pregnancy.preBmi}}</text><text>孕前 BMI · {{specialAssessment.pregnancy.preBmiLabel}}</text></view>
+      <view><text>{{specialAssessment.pregnancy.gainKg}} kg</text><text>当前累计增重</text></view>
+      <view><text>{{specialAssessment.pregnancy.totalRange}}</text><text>全孕期参考</text></view>
+      <view><text>{{specialAssessment.pregnancy.weeklyRange}}</text><text>{{specialAssessment.pregnancy.gestationalWeek}} 周阶段参考</text></view>
+    </view>
+    <view class="result-direction">{{specialAssessment.pregnancy.direction}}</view>
+    <view class="bmi-link dark" bindtap="openBmiInfo">了解孕期增重标准与边界 ›</view>
+  </view>
+
+  <view wx:elif="{{!adultMode && specialAssessment.type === 'pregnant' && specialAssessment.note}}" class="special-result card pregnancy-result">
+    <view class="result-kicker">单胎妊娠期</view>
+    <view class="postpartum-title">通用增重范围已暂停</view>
+    <view class="result-direction">{{specialAssessment.note}}</view>
+  </view>
+
+  <view wx:elif="{{!adultMode && specialAssessment.type === 'postpartum'}}" class="special-result card postpartum-result">
+    <view class="result-kicker">产后 / 哺乳期</view>
+    <view class="postpartum-title">保留记录，不自动评价减重速度</view>
+    <view class="result-direction">{{specialAssessment.note}}</view>
+  </view>
+
+  <view wx:else class="bmi-empty card">
+    <view class="bmi-empty-icon">◌</view>
+    <view>
+      <view class="bmi-empty-title">尚未计算 BMI</view>
+      <view class="muted">保存人群信息、身高和体重后即可查看适用的筛查参考。</view>
+    </view>
+  </view>
+
+  <view class="section-title">记录一次</view>
+  <form class="record-form card" bindsubmit="saveRecord">
+    <view class="dual-fields">
+      <view class="form-group">
+        <text class="form-label">身高（cm）</text>
+        <input
+          class="form-input"
+          type="digit"
+          name="heightCm"
+          maxlength="5"
+          placeholder="例如 168.5"
+          value="{{heightInput}}"
+          bindinput="onHeightInput"
+        />
+      </view>
+      <view class="form-group">
+        <text class="form-label">体重（kg）</text>
+        <input
+          class="form-input"
+          type="digit"
+          name="weightKg"
+          maxlength="5"
+          placeholder="例如 60.5"
+          value="{{weightInput}}"
+          bindinput="onWeightInput"
+        />
+      </view>
+    </view>
+    <view wx:if="{{draftBmiInfo}}" class="draft-bmi">
+      <text>本次筛查参考</text>
+      <text class="draft-bmi-value">{{draftBmiInfo.value}} · {{draftBmiInfo.label}}</text>
+    </view>
+    <view class="form-group">
+      <text class="form-label">记录日期</text>
+      <picker mode="date" value="{{recordDate}}" end="{{maxDate}}" bindchange="onDateChange">
+        <view class="picker-field">{{recordDate}}　›</view>
+      </picker>
+    </view>
+
+    <view wx:if="{{adultMode}}" class="confirm-panel">
+      <view class="confirm-row">
+        <text>我已满 18 周岁</text>
+        <switch color="#2f6f4e" checked="{{adultConfirmedDraft}}" data-field="adultConfirmedDraft" bindchange="toggleConfirm" />
+      </view>
+      <view class="confirm-row">
+        <text>我当前不处于孕期</text>
+        <switch color="#2f6f4e" checked="{{notPregnantDraft}}" data-field="notPregnantDraft" bindchange="toggleConfirm" />
+      </view>
+      <view class="confirm-row">
+        <text>我理解 BMI 仅用于成人体重筛查</text>
+        <switch color="#2f6f4e" checked="{{understoodDraft}}" data-field="understoodDraft" bindchange="toggleConfirm" />
+      </view>
+    </view>
+    <view wx:else class="special-confirm-panel" bindtap="openSpecialHealth">
+      <view>
+        <view class="special-confirm-title">{{populationLabel}}</view>
+        <view class="muted">{{specialGuidanceConfirmed ? '已确认特殊人群使用边界' : '请先补充信息并确认使用边界'}}</view>
+      </view>
+      <view class="special-confirm-arrow">›</view>
+    </view>
+    <button class="btn btn-primary" form-type="submit">保存记录并查看方向</button>
+  </form>
+
+  <view wx:if="{{conditionGuidance.length}}" class="condition-summary card">
+    <view class="condition-summary-title">已暂停 BMI 自动配餐</view>
+    <view class="condition-summary-copy">你选择了需要专业评估的健康状况。小程序只展示以下一般原则，不将营养估算当作疾病膳食处方。</view>
+    <view wx:for="{{conditionGuidance}}" wx:key="label" class="condition-summary-item">
+      <view>{{item.label}}</view>
+      <text>{{item.text}}</text>
+    </view>
+    <button class="btn btn-secondary btn-small" bindtap="openSpecialHealth">修改健康状况</button>
+  </view>
+
+  <view wx:if="{{records.length}}" class="trend-header">
+    <view>
+      <view class="section-title trend-title">体重趋势</view>
+      <view wx:if="{{weightChangeText}}" class="muted">相比上次 {{weightChangeText}}</view>
+    </view>
+    <view class="trend-tabs">
+      <view class="{{trendDays === 30 ? 'active' : ''}}" data-days="30" bindtap="changeTrend">30天</view>
+      <view class="{{trendDays === 90 ? 'active' : ''}}" data-days="90" bindtap="changeTrend">90天</view>
+    </view>
+  </view>
+  <view wx:if="{{records.length}}" class="trend-card card">
+    <canvas wx:if="{{trendRecords.length > 1}}" canvas-id="trendCanvas" class="trend-canvas" />
+    <view wx:else class="trend-empty">至少记录两次后才能形成趋势。</view>
+  </view>
+
+  <view wx:if="{{records.length}}" class="section-title">历史记录</view>
+  <view wx:if="{{records.length}}" class="records card">
+    <view wx:for="{{records}}" wx:key="id" class="record-row">
+      <view>
+        <view class="record-weight">{{item.weightKg}} kg</view>
+        <view class="muted">{{item.date}}</view>
+      </view>
+      <button class="delete-link" data-id="{{item.id}}" bindtap="deleteRecord">删除</button>
+    </view>
+  </view>
+
+  <view class="medical-note">成人 BMI、儿童超重肥胖界值和孕期增重范围均属于筛查或健康教育参考，不能诊断疾病，也不能替代儿科、产科、医生或临床营养师的个体化方案。</view>
+
+  <view wx:if="{{recommendationVisible && timeRecommendation}}" class="modal-mask" bindtap="closeTimeRecommendation">
+    <view class="modal-box recommendation-modal" catchtap="stopModalPropagation">
+      <view class="recommendation-kicker">{{timeRecommendation.periodTitle}}</view>
+      <view class="modal-title">现在适合吃什么？</view>
+      <view class="recommendation-summary">BMI {{timeRecommendation.bmiValue}} · {{timeRecommendation.bmiLabel}}</view>
+      <view class="recommendation-greeting">{{timeRecommendation.greeting}}</view>
+
+      <view class="recommendation-list">
+        <view wx:for="{{timeRecommendation.items}}" wx:key="recipe.id" class="recommendation-item" data-id="{{item.recipe.id}}" bindtap="openRecommendedRecipe">
+          <image wx:if="{{item.recipe.coverImage}}" class="recommendation-image" src="{{item.recipe.coverImage}}" mode="aspectFill" data-id="{{item.recipe.id}}" data-src="{{item.recipe.coverImage}}" data-index="{{index}}" binderror="onRecommendationImageError" />
+          <view wx:else class="recommendation-icon">{{item.recipe.coverEmoji}}</view>
+          <view class="recommendation-main">
+            <view class="recommendation-slot">{{item.label}}</view>
+            <view class="recommendation-name">{{item.recipe.name}}</view>
+            <view class="recommendation-meta">{{item.recipe.durationMinutes}} 分钟 · {{item.recipe.estimatedKcalPerServing || '--'}} 千卡/份（估算）</view>
+          </view>
+          <view class="recommendation-arrow">›</view>
+        </view>
+      </view>
+
+      <view class="recommendation-note">{{timeRecommendation.direction}} 推荐会自动避开已设置的过敏原和忌口；点按菜名可查看完整做法。</view>
+      <view class="modal-actions">
+        <button class="btn btn-secondary" bindtap="refreshTimeRecommendation">换一组</button>
+        <button class="btn btn-primary" bindtap="addTimeRecommendationToPlan">加入今日菜单</button>
+      </view>
+    </view>
+  </view>
+</view>

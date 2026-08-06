@@ -1,0 +1,173 @@
+<view class="page">
+  <view class="editor-intro card">
+    <text class="editor-icon">{{form.coverEmoji || '🍽️'}}</text>
+    <view>
+      <view class="editor-title">{{isBuiltinOverride ? '修改内置菜谱' : (isEdit ? '编辑我的菜谱' : '写下你的味道')}}</view>
+      <view class="muted">{{isBuiltinOverride ? '修改会直接显示在首页，仅保存在当前设备。' : '默认只保存在本机；主动投稿后才会上传审核。'}}</view>
+    </view>
+  </view>
+
+  <view class="section-title">菜谱封面</view>
+  <view class="cover-editor card">
+    <image
+      wx:if="{{form.coverImage}}"
+      class="cover-preview"
+      src="{{form.coverImage}}"
+      mode="aspectFill"
+      bindtap="previewCover"
+    />
+    <view wx:else class="cover-placeholder">{{form.coverEmoji || '🍽️'}}</view>
+    <view class="cover-actions">
+      <button class="btn btn-secondary btn-small" bindtap="chooseCoverImage">{{form.coverImage ? '替换图片' : '上传图片'}}</button>
+      <button wx:if="{{form.coverImage}}" class="btn btn-danger btn-small" bindtap="removeCoverImage">移除图片</button>
+    </view>
+    <view class="cover-help">支持从相册或相机选择，建议小于 4MB。仅本地保存时图片不会上传；主动投稿审核时所选封面会随菜谱上传云端。</view>
+  </view>
+
+  <view class="section-title">基本信息</view>
+  <view class="editor-card card">
+    <view class="form-group">
+      <text class="form-label">菜名 *</text>
+      <input class="form-input" data-field="name" value="{{form.name}}" bindinput="updateField" placeholder="例如：妈妈的番茄炒蛋" />
+    </view>
+    <view class="form-group">
+      <text class="form-label">简介</text>
+      <textarea class="form-textarea short" data-field="description" value="{{form.description}}" bindinput="updateField" placeholder="这道菜有什么特别之处？" />
+    </view>
+    <view class="dual-fields">
+      <view class="form-group">
+        <text class="form-label">菜品类型</text>
+        <picker range="{{mealTypes}}" bindchange="chooseMealType">
+          <view class="picker-field">{{form.mealType}}　›</view>
+        </picker>
+      </view>
+      <view class="form-group">
+        <text class="form-label">主要标签</text>
+        <picker range="{{healthTags}}" bindchange="chooseHealthTag">
+          <view class="picker-field">{{form.healthTag}}　›</view>
+        </picker>
+      </view>
+    </view>
+    <view class="form-group">
+      <text class="form-label">菜系标签</text>
+      <picker range="{{cuisines}}" bindchange="chooseCuisine">
+        <view class="picker-field">{{form.cuisine || '家常菜'}}　›</view>
+      </picker>
+      <view class="field-help">选择后会出现在首页菜系筛选和菜谱详情中。</view>
+    </view>
+    <view class="triple-fields">
+      <view class="form-group">
+        <text class="form-label">份数</text>
+        <input class="form-input" type="number" data-field="servings" value="{{form.servings}}" bindinput="updateField" />
+      </view>
+      <view class="form-group">
+        <text class="form-label">分钟</text>
+        <input class="form-input" type="number" data-field="durationMinutes" value="{{form.durationMinutes}}" bindinput="updateField" />
+      </view>
+      <view class="form-group">
+        <text class="form-label">难度</text>
+        <input class="form-input" data-field="difficulty" value="{{form.difficulty}}" bindinput="updateField" />
+      </view>
+    </view>
+    <view class="form-group">
+      <text class="form-label">封面 Emoji</text>
+      <input class="form-input" data-field="coverEmoji" value="{{form.coverEmoji}}" bindinput="updateField" maxlength="4" />
+    </view>
+  </view>
+
+  <view class="section-title">食材与步骤</view>
+  <view class="editor-card card">
+    <view class="form-group">
+      <text class="form-label">食材 *（每行一种，名称与用量用空格分隔）</text>
+      <textarea class="form-textarea" data-field="ingredientsText" value="{{form.ingredientsText}}" bindinput="updateField" placeholder="鸡蛋 3个&#10;番茄 2个" />
+    </view>
+    <view class="form-group">
+      <text class="form-label">调味料（每行一种）</text>
+      <textarea class="form-textarea" data-field="seasoningsText" value="{{form.seasoningsText}}" bindinput="updateField" placeholder="盐 少许&#10;食用油 1勺" />
+    </view>
+    <view class="form-group">
+      <text class="form-label">做法步骤 *</text>
+      <view class="step-editor-list">
+        <view wx:for="{{form.steps}}" wx:key="id" class="step-editor">
+          <view class="step-editor-head">
+            <view class="step-index">{{index + 1}}</view>
+            <view class="step-tools">
+              <text wx:if="{{index > 0}}" data-index="{{index}}" data-direction="-1" bindtap="moveStep">上移</text>
+              <text wx:if="{{index !== form.steps.length - 1}}" data-index="{{index}}" data-direction="1" bindtap="moveStep">下移</text>
+              <text class="danger-text" data-index="{{index}}" bindtap="deleteStep">删除</text>
+            </view>
+          </view>
+          <textarea
+            class="form-textarea step-textarea"
+            value="{{item.text}}"
+            data-index="{{index}}"
+            bindinput="onStepInput"
+            placeholder="描述这个步骤，例如：鸡蛋打散，加入少许盐搅匀"
+          />
+        </view>
+      </view>
+      <button class="btn btn-outline add-step-button" bindtap="addStep">＋ 添加步骤</button>
+    </view>
+    <view class="form-group">
+      <text class="form-label">烹饪提示（每行一条）</text>
+      <textarea class="form-textarea short" data-field="tipsText" value="{{form.tipsText}}" bindinput="updateField" />
+    </view>
+    <view class="form-group">
+      <text class="form-label">教学视频 HTTPS 地址（可选）</text>
+      <input class="form-input" data-field="videoUrl" value="{{form.videoUrl}}" bindinput="updateField" placeholder="需使用已授权且已配置域名的视频" />
+    </view>
+    <view class="form-group tutorial-fields">
+      <text class="form-label">外部教程参考（可选）</text>
+      <input class="form-input" data-field="tutorialSource" value="{{form.tutorialSource}}" bindinput="updateField" placeholder="来源，例如：抖音、小红书" />
+      <input class="form-input tutorial-input" data-field="tutorialTitle" value="{{form.tutorialTitle}}" bindinput="updateField" placeholder="教程标题" />
+      <input class="form-input tutorial-input" data-field="tutorialUrl" value="{{form.tutorialUrl}}" bindinput="updateField" placeholder="公开 HTTPS 链接" />
+      <view class="muted editor-field-help">仅保存本机时不会上传；主动投稿后，该公开链接会随菜谱进入审核内容。</view>
+    </view>
+  </view>
+
+  <view class="section-title">营养与过敏信息</view>
+  <view class="editor-card card">
+    <view class="dual-fields">
+      <view class="form-group">
+        <text class="form-label">能量等级</text>
+        <picker range="{{energyLevels}}" range-key="label" value="{{energyLevelIndex}}" bindchange="chooseEnergyLevel">
+          <view class="picker-field">{{energyLevelLabel}}　›</view>
+        </picker>
+      </view>
+      <view class="form-group">
+        <text class="form-label">估算千卡/份</text>
+        <input class="form-input" type="number" data-field="estimatedKcalPerServing" value="{{form.estimatedKcalPerServing}}" bindinput="updateField" placeholder="可选" />
+      </view>
+    </view>
+    <view class="form-label">主要过敏原</view>
+    <view class="allergy-grid">
+      <view
+        wx:for="{{allergenOptions}}"
+        wx:key="name"
+        class="allergy-chip {{item.selected ? 'active' : ''}}"
+        data-value="{{item.name}}"
+        bindtap="toggleAllergy"
+      >{{item.name}}</view>
+    </view>
+    <view class="health-switch compact-switch">
+      <view>
+        <view>已核对主要过敏原</view>
+        <view class="muted">如果没有，也请主动确认</view>
+      </view>
+      <switch color="#2f6f4e" checked="{{form.allergensReviewed}}" bindchange="toggleAllergensReviewed" />
+    </view>
+    <view class="health-switch">
+      <view>
+        <view>允许参与健康推荐</view>
+        <view class="muted">仅在营养和过敏信息完整时开启</view>
+      </view>
+      <switch color="#2f6f4e" checked="{{form.healthEligible}}" bindchange="toggleHealthEligible" />
+    </view>
+  </view>
+
+  <view class="save-actions">
+    <button class="btn btn-secondary save-button" bindtap="save">{{isBuiltinOverride ? '保存本地修改' : '仅保存本机'}}</button>
+    <button wx:if="{{!isBuiltinOverride}}" class="btn btn-primary submit-button" disabled="{{submitting}}" bindtap="submitForReview">{{submitting ? '正在提交…' : '提交公开审核'}}</button>
+  </view>
+  <view wx:if="{{!isBuiltinOverride}}" class="submission-help">投稿不会立即公开，管理员审核通过后才会进入公共菜谱库。</view>
+</view>

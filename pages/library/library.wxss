@@ -1,0 +1,121 @@
+.library-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8rpx 0 28rpx;
+}
+
+.library-empty-action {
+  width: 220rpx;
+  margin: 24rpx auto 0;
+}
+
+.eyebrow {
+  color: #789081;
+  font-size: 19rpx;
+  letter-spacing: 5rpx;
+}
+
+.page-title {
+  margin-top: 6rpx;
+  font-size: 48rpx;
+  font-weight: 800;
+}
+
+.library-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 28rpx;
+  color: #b06b23;
+  background: #fff0d7;
+  font-size: 60rpx;
+}
+
+.recipe-list {
+  padding: 0 24rpx;
+}
+
+.recipe-row, .recipe-open {
+  display: flex;
+  align-items: center;
+}
+
+.recipe-row {
+  min-height: 112rpx;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #edf0ed;
+}
+
+.recipe-row:last-child {
+  border-bottom: none;
+}
+
+.recipe-row:active {
+  background: #f7faf5;
+}
+
+.recipe-open {
+  flex: 1;
+  min-width: 0;
+}
+
+.recipe-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72rpx;
+  height: 72rpx;
+  margin-right: 18rpx;
+  border-radius: 18rpx;
+  background: #eef4ed;
+  font-size: 42rpx;
+}
+
+.recipe-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.recipe-name {
+  overflow: hidden;
+  color: #203b2c;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.recipe-main .muted {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+}
+
+.arrow {
+  padding-left: 16rpx;
+  color: #9ca59f;
+  font-size: 40rpx;
+}
+
+.library-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.library-section-title {
+  margin-bottom: 10rpx;
+}
+
+.row-actions {
+  display: flex;
+  gap: 20rpx;
+  padding-left: 16rpx;
+  color: #2f6f4e;
+  font-size: 24rpx;
+}
+
+.danger-text {
+  color: #b44335;
+}

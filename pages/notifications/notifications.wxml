@@ -1,0 +1,61 @@
+<view class="page notification-page">
+  <view class="notice-intro card">
+    <view class="notice-icon">🔔</view>
+    <view class="notice-copy">
+      <view class="notice-title">通知与菜谱投稿</view>
+      <view class="muted">查看投稿进度；管理员可在这里审核并发布公共菜谱。</view>
+    </view>
+  </view>
+
+  <view wx:if="{{errorText}}" class="error-card card">{{errorText}}</view>
+  <view wx:if="{{loading}}" class="loading-card card">正在加载云端通知…</view>
+
+  <block wx:if="{{!loading && !errorText}}">
+    <block wx:if="{{isAdmin}}">
+      <view class="section-title">待审核投稿（{{pendingCount}}）</view>
+      <view wx:if="{{!reviewQueue.length}}" class="empty-card card">当前没有待审核菜谱。</view>
+      <view wx:for="{{reviewQueue}}" wx:key="id" class="review-card card">
+        <view class="review-head" data-index="{{index}}" bindtap="toggleReviewDetail">
+          <view class="recipe-emoji">{{item.recipe.coverEmoji || '🍽️'}}</view>
+          <view class="review-main">
+            <view class="review-name">{{item.recipe.name}}</view>
+            <view class="muted">投稿人：{{item.publisherName || '社区用户'}} · {{item.timeText}}</view>
+          </view>
+          <view class="review-arrow">{{item.expanded ? '⌃' : '⌄'}}</view>
+        </view>
+        <view wx:if="{{item.expanded}}" class="review-detail">
+          <view wx:if="{{item.recipe.description}}" class="review-description">{{item.recipe.description}}</view>
+          <view class="review-label">食材</view>
+          <view class="review-text">{{item.ingredientText}}</view>
+          <view class="review-label">过敏原</view>
+          <view class="review-text">{{item.allergenText}}</view>
+          <view class="review-label">做法步骤</view>
+          <view wx:for="{{item.recipe.steps}}" wx:for-item="step" wx:key="id" class="review-step">
+            <text>{{index + 1}}</text><view>{{step.text}}</view>
+          </view>
+        </view>
+        <view class="review-actions">
+          <button class="review-button reject" data-index="{{index}}" bindtap="reject">驳回</button>
+          <button class="review-button approve" data-index="{{index}}" bindtap="approve">通过并发布</button>
+        </view>
+      </view>
+    </block>
+
+    <view class="section-title">我的投稿</view>
+    <view wx:if="{{!mySubmissions.length}}" class="empty-card card">
+      暂无投稿。在“我的菜谱”中新建或编辑菜谱后，可以选择“提交公开审核”。
+    </view>
+    <view wx:else class="submission-list card">
+      <view wx:for="{{mySubmissions}}" wx:key="id" class="submission-row">
+        <view class="recipe-emoji">{{item.coverEmoji || '🍽️'}}</view>
+        <view class="submission-main">
+          <view class="submission-name">{{item.name}}</view>
+          <view class="muted">{{item.timeText}}</view>
+          <view wx:if="{{item.reviewReason}}" class="review-reason">原因：{{item.reviewReason}}</view>
+        </view>
+        <view class="status-chip {{item.statusClass}}">{{item.statusLabel}}</view>
+        <view class="submission-delete" data-index="{{index}}" catchtap="removeOwnSubmission">{{item.status === 'approved' ? '下架' : '删除'}}</view>
+      </view>
+    </view>
+  </block>
+</view>

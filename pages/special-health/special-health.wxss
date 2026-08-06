@@ -1,0 +1,36 @@
+.intro-card { padding: 34rpx; background: linear-gradient(145deg, #eff7ed, #fff9ec); }
+.intro-icon { font-size: 54rpx; }
+.intro-title { margin-top: 10rpx; color: #234431; font-size: 38rpx; font-weight: 800; }
+.intro-copy { margin-top: 8rpx; color: #68766d; font-size: 24rpx; line-height: 1.7; }
+.population-list { display: flex; flex-direction: column; gap: 16rpx; }
+.population-card { display: flex; align-items: center; min-height: 112rpx; padding: 22rpx 24rpx; }
+.population-card.active { border: 2rpx solid #4a8a62; background: #f0f7ef; }
+.population-icon { width: 64rpx; font-size: 40rpx; }
+.population-main { flex: 1; min-width: 0; }
+.population-label { color: #284735; font-weight: 800; }
+.population-help { margin-top: 3rpx; color: #839087; font-size: 22rpx; }
+.population-check { width: 42rpx; color: #2f6f4e; font-size: 32rpx; font-weight: 800; text-align: center; }
+.detail-card, .condition-card { margin-top: 22rpx; padding: 28rpx; }
+.detail-title { margin-bottom: 24rpx; color: #264632; font-size: 30rpx; font-weight: 800; }
+.dual-fields { display: flex; gap: 18rpx; }
+.dual-fields .form-group { flex: 1; min-width: 0; }
+.sex-options { display: flex; gap: 18rpx; }
+.sex-option { flex: 1; padding: 20rpx; border: 2rpx solid #dfe5df; border-radius: 18rpx; color: #68736c; text-align: center; }
+.sex-option.active { color: #fff; border-color: #2f6f4e; background: #2f6f4e; }
+.field-note { padding: 18rpx; border-radius: 16rpx; color: #87623f; background: #fff4e5; font-size: 22rpx; line-height: 1.65; }
+.confirm-row { display: flex; align-items: center; justify-content: space-between; gap: 22rpx; margin-bottom: 22rpx; }
+.row-help { color: #8a938d; font-size: 21rpx; }
+.notice-card { margin-top: 22rpx; padding: 28rpx; color: #657269; font-size: 24rpx; line-height: 1.7; }
+.notice-title { margin-bottom: 8rpx; color: #32553e; font-size: 29rpx; font-weight: 800; }
+.condition-grid { display: flex; flex-wrap: wrap; gap: 14rpx; }
+.condition-chip { padding: 12rpx 18rpx; border: 2rpx solid #e0e5e1; border-radius: 999rpx; color: #667269; background: #fff; font-size: 23rpx; }
+.condition-chip.active { color: #fff; border-color: #a2663d; background: #a2663d; }
+.no-condition { padding: 30rpx 0 8rpx; color: #929a95; font-size: 23rpx; text-align: center; }
+.guidance-item { margin-top: 22rpx; padding-top: 20rpx; border-top: 1rpx solid #e9ede9; }
+.guidance-title { color: #764c31; font-weight: 800; }
+.guidance-copy { margin-top: 5rpx; color: #667269; font-size: 23rpx; line-height: 1.65; }
+.boundary-card { margin-top: 30rpx; padding: 22rpx; border-radius: 22rpx; background: #edf3ec; }
+.boundary-row { margin: 0; }
+.boundary-copy { flex: 1; color: #56675c; font-size: 23rpx; line-height: 1.6; }
+.save-button { width: 100%; margin-top: 28rpx; }
+.source-note { margin-top: 24rpx; color: #89918c; font-size: 20rpx; line-height: 1.65; text-align: center; }

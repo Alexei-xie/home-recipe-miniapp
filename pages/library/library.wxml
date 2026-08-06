@@ -1,0 +1,56 @@
+<view class="page library-page">
+  <view class="library-heading">
+    <view>
+      <text class="eyebrow">SAVED RECIPES</text>
+      <view class="page-title">收藏与菜谱</view>
+      <view class="muted">喜欢的菜谱和本地创作，都放在这里。</view>
+    </view>
+    <view class="library-icon">♡</view>
+  </view>
+
+  <view class="section-title">我的收藏</view>
+  <view wx:if="{{favoriteRecipes.length}}" class="recipe-list card">
+    <view wx:for="{{favoriteRecipes}}" wx:key="id" class="recipe-row" data-id="{{item.id}}" bindtap="openRecipe">
+      <view class="recipe-emoji">{{item.coverEmoji}}</view>
+      <view class="recipe-main">
+        <view class="recipe-name">{{item.name}}</view>
+        <view class="muted">{{item.cuisine || '家常菜'}} · {{item.mealType}} · {{item.durationMinutes}} 分钟</view>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+  <view wx:else class="empty card">
+    <text class="empty-emoji">☆</text>
+    <view>还没有收藏菜谱</view>
+    <view class="muted">在菜谱详情页点“收藏”即可保存到这里。</view>
+    <button class="btn btn-secondary btn-small library-empty-action" bindtap="goHome">去逛逛菜谱</button>
+  </view>
+
+  <view class="library-section-header">
+    <view>
+      <view class="section-title library-section-title">我的菜谱</view>
+      <view class="section-subtitle">默认只保存在当前设备；编辑后可主动提交公开审核。</view>
+    </view>
+    <button class="btn btn-primary btn-small" bindtap="addRecipe">＋ 新建</button>
+  </view>
+  <view wx:if="{{customRecipes.length}}" class="recipe-list card">
+    <view wx:for="{{customRecipes}}" wx:key="id" class="recipe-row">
+      <view class="recipe-open" data-id="{{item.id}}" bindtap="openRecipe">
+        <view class="recipe-emoji">{{item.coverEmoji}}</view>
+        <view class="recipe-main">
+          <view class="recipe-name">{{item.name}}</view>
+          <view class="muted">{{item.cuisine || '家常菜'}} · {{item.mealType}} · {{item.durationMinutes}} 分钟</view>
+        </view>
+      </view>
+      <view class="row-actions">
+        <text data-id="{{item.id}}" bindtap="editRecipe">编辑</text>
+        <text class="danger-text" data-id="{{item.id}}" bindtap="deleteRecipe">删除</text>
+      </view>
+    </view>
+  </view>
+  <view wx:else class="empty card">
+    <text class="empty-emoji">📝</text>
+    <view>还没有自己的菜谱</view>
+    <view class="muted">可以新建，或直接修改内置菜谱。</view>
+  </view>
+</view>

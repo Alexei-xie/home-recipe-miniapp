@@ -1,0 +1,62 @@
+.formula {
+  padding: 42rpx 28rpx;
+  text-align: center;
+  color: #fff;
+  background: #2f6f4e;
+}
+
+.formula-label {
+  font-size: 23rpx;
+  opacity: 0.72;
+}
+
+.formula-main {
+  margin: 14rpx 0;
+  font-size: 40rpx;
+  font-weight: 800;
+}
+
+.formula .muted {
+  color: rgba(255,255,255,.72);
+  font-size: 22rpx;
+}
+
+.levels {
+  padding: 10rpx 24rpx;
+}
+
+.level {
+  display: flex;
+  justify-content: space-between;
+  margin: 16rpx 0;
+  padding: 20rpx 24rpx;
+  border-left: 10rpx solid #999;
+  border-radius: 12rpx;
+  background: #f4f5f2;
+}
+
+.level.under { border-left-color: #c0904f; }
+.level.normal { border-left-color: #4f9669; }
+.level.over { border-left-color: #cf793c; }
+.level.obese { border-left-color: #ad5648; }
+
+.info-card {
+  padding: 16rpx 26rpx;
+  color: #626d66;
+}
+
+.info-card view {
+  margin: 16rpx 0;
+}
+
+.child-info { border-left: 8rpx solid #76a56e; }
+.pregnancy-info { border-left: 8rpx solid #d5907a; }
+.warning-info { border-left: 8rpx solid #b87943; background: #fff9ef; }
+
+.source-note {
+  margin-top: 32rpx;
+  padding: 22rpx;
+  color: #7d8580;
+  font-size: 22rpx;
+  text-align: center;
+}

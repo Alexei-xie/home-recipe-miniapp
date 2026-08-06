@@ -1,0 +1,54 @@
+.privacy-hero {
+  padding: 38rpx;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(140deg, #244c36, #4f7d60);
+}
+
+.privacy-icon {
+  font-size: 70rpx;
+}
+
+.privacy-title {
+  margin-top: 12rpx;
+  font-size: 40rpx;
+  font-weight: 800;
+}
+
+.privacy-copy {
+  margin-top: 14rpx;
+  font-size: 25rpx;
+  opacity: 0.82;
+}
+
+.summary, .text-card {
+  padding: 12rpx 26rpx;
+}
+
+.summary view {
+  display: flex;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #edf0ed;
+}
+
+.summary view:last-child {
+  border-bottom: none;
+}
+
+.summary view text:last-child {
+  color: #6f7872;
+}
+
+.text-card {
+  color: #66706a;
+}
+
+.text-card view {
+  margin: 16rpx 0;
+}
+
+.text-card.warning {
+  color: #80593a;
+  background: #fff6e8;
+}

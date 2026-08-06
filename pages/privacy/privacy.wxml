@@ -1,0 +1,47 @@
+<view class="page">
+  <view class="privacy-hero card">
+    <view class="privacy-icon">🔒</view>
+    <view class="privacy-title">本地优先，投稿由你决定</view>
+    <view class="privacy-copy">健康记录、头像和偏好保存在本机。只有主动点击“提交公开审核”时，菜谱内容、昵称副本和所选封面才会上传 CloudBase。</view>
+  </view>
+
+  <view class="section-title">当前保存的数据</view>
+  <view class="summary card">
+    <view><text>昵称</text><text>{{summary.hasNickname ? '已保存' : '未保存'}}</text></view>
+    <view><text>头像</text><text>{{summary.hasAvatar ? '已保存' : '未保存'}}</text></view>
+    <view><text>身高</text><text>{{summary.heightCm ? summary.heightCm + ' cm' : '未保存'}}</text></view>
+    <view><text>适用人群</text><text>{{summary.populationLabel}}</text></view>
+    <view><text>健康状况</text><text>{{summary.conditionCount}} 项</text></view>
+    <view><text>体重记录</text><text>{{summary.weightCount}} 条</text></view>
+    <view><text>过敏与忌口</text><text>{{summary.allergyCount + summary.avoidedCount}} 项</text></view>
+    <view><text>我的菜谱</text><text>{{summary.customRecipeCount}} 道</text></view>
+    <view><text>已修改内置菜谱</text><text>{{summary.overrideRecipeCount}} 道</text></view>
+    <view><text>我的收藏</text><text>{{summary.favoriteCount}} 道</text></view>
+    <view><text>抽取历史</text><text>{{summary.drawCount}} 条</text></view>
+  </view>
+
+  <view class="section-title">保存与丢失风险</view>
+  <view class="text-card card">
+    <view>· BMI、体重记录、头像、过敏和忌口数据不会随菜谱投稿上传。</view>
+    <view>· 主动投稿时会上传菜谱文字、昵称副本、所选封面及公开教程链接，用于管理员审核和审核后的公共展示。</view>
+    <view>· 投稿可以在“我的 → 通知与菜谱投稿”中撤回；已发布菜谱也可下架并删除云端投稿与封面。</view>
+    <view>· 用户为自定义或内置菜谱替换的封面会复制到微信本地用户目录；删除、恢复原版或清除全部个人数据时会清理对应文件。</view>
+    <view>· 内置菜谱封面使用随代码包发布的卡通插画，不会为菜谱封面请求第三方图片服务。</view>
+    <view>· 不同微信用户和不同小程序之间的本地缓存相互隔离。</view>
+    <view>· 清理微信存储、删除小程序数据或更换设备后，数据可能丢失且无法找回。</view>
+    <view>· 教学视频如配置远程地址，会由视频托管方提供；本程序不会向图片或视频服务上传你的健康数据。</view>
+  </view>
+
+  <view class="section-title">健康功能边界</view>
+  <view class="text-card warning card">
+    <view>成人 BMI、6–17 岁超重肥胖界值和单胎妊娠期增重范围仅用于筛查或健康教育，不能诊断疾病。</view>
+    <view>儿童结果不能判断偏瘦、营养不良或生长迟缓；孕期范围不能替代产检和妊娠并发症管理。</view>
+    <view>疾病相关内容仅展示一般食养原则，不是医疗处方；选择健康状况后会暂停 BMI 自动配餐。</view>
+    <view>未成年人、孕产妇、慢性病患者、进食障碍患者及严重过敏人群仍应咨询医生、儿保/产科或临床营养师。</view>
+  </view>
+
+  <view class="section-title">你可以控制数据</view>
+  <view class="text-card card">
+    <view>请返回“我的 → 隐私与数据”，可分别清除健康记录、抽取历史，或清除包括收藏在内的全部个人数据。删除操作需要二次确认，完成后无法恢复。</view>
+  </view>
+</view>

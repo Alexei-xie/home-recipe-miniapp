@@ -1,0 +1,52 @@
+<view class="page">
+  <view class="formula card">
+    <text class="formula-label">BMI 计算公式</text>
+    <view class="formula-main">体重（kg）÷ 身高²（m）</view>
+    <view class="muted">显示值保留一位小数，实际分级使用未四舍五入的计算结果。</view>
+  </view>
+
+  <view class="section-title">中国成人 BMI 分级</view>
+  <view class="levels card">
+    <view class="level under"><text>体重偏低</text><text>&lt; 18.5</text></view>
+    <view class="level normal"><text>正常范围</text><text>18.5–23.9</text></view>
+    <view class="level over"><text>超重</text><text>24.0–27.9</text></view>
+    <view class="level obese"><text>肥胖</text><text>≥ 28.0</text></view>
+  </view>
+
+  <view class="section-title">如何理解结果</view>
+  <view class="info-card card">
+    <view>BMI 适合用于成年人群体重状态的初步筛查，但不能直接反映体脂率、肌肉量或脂肪分布。</view>
+    <view>运动员、肌肉量较高者和部分老年人的 BMI 需要结合其他指标理解。</view>
+    <view>一次记录不等于长期趋势。比起追逐短期数字，更建议关注规律饮食、活动和持续变化。</view>
+  </view>
+
+  <view class="section-title">本程序的推荐范围</view>
+  <view class="info-card card">
+    <view>体重偏低时，优先展示规律正餐、优质蛋白和健康加餐。</view>
+    <view>正常范围时，优先展示食物多样、日常均衡的搭配。</view>
+    <view>超重或肥胖时，优先展示少油、蔬菜较多和含优质蛋白的菜谱，不提供激进节食方案。</view>
+  </view>
+
+  <view class="section-title">6–17 岁儿童青少年</view>
+  <view class="info-card child-info card">
+    <view>使用《学龄儿童青少年超重与肥胖筛查》WS/T 586—2018，按实际年龄（每半岁一档）和生物学性别匹配 BMI 界值。</view>
+    <view>结果只说明是否达到超重或肥胖筛查界值，不能把“未达到界值”解释为体重正常，也不能判断偏瘦、营养不良或生长迟缓。</view>
+    <view>儿童仍在生长发育，不应照搬成人减重方法或自行严格节食；需要结合身高别体重、生长曲线、青春期发育等由儿科或儿童保健机构评估。</view>
+  </view>
+
+  <view class="section-title">单胎妊娠期</view>
+  <view class="info-card pregnancy-info card">
+    <view>当前体重不使用普通成人 BMI 分类；程序先用孕前身高体重计算孕前 BMI，再显示对应的全孕期和孕中晚期增重参考范围。</view>
+    <view>范围仅适用于身高不低于 140 cm、孕前体重不超过 125 kg 的单胎自然妊娠。多胎妊娠或存在并发症时不适用。</view>
+    <view>妊娠期糖尿病、高血压等情况必须结合产检、血糖或其他检查由产科和营养专业人员制定方案。</view>
+  </view>
+
+  <view class="section-title">疾病相关食养</view>
+  <view class="info-card warning-info card">
+    <view>高血压、高血糖、高脂血症、高尿酸、脂肪肝等只展示权威的一般食养原则；一旦选择相关状况，程序会暂停 BMI 自动食谱套餐。</view>
+    <view>脂肪肝不等同于高脂血症，需要结合病因、饮酒情况、肝功能、影像和代谢指标综合评估。</view>
+    <view>疾病膳食处方需要结合诊断、化验、用药、并发症及个体营养状况，由医生或临床营养师制定，本程序不自动生成。</view>
+  </view>
+
+  <view class="source-note">参考：《成人体重判定》WS/T 428—2013、《学龄儿童青少年超重与肥胖筛查》WS/T 586—2018、《妊娠期妇女体重增长推荐值标准》WS/T 801—2022、国家成人慢性病食养指南及《中国居民膳食指南（2022）》。</view>
+</view>

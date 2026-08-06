@@ -1,0 +1,90 @@
+<view class="page">
+  <view class="profile-head card">
+    <button class="avatar-button" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+      <image wx:if="{{profile.avatarPath}}" class="avatar" src="{{profile.avatarPath}}" mode="aspectFill" />
+      <view wx:else class="avatar avatar-placeholder">🙂</view>
+    </button>
+    <view class="profile-copy">
+      <view class="profile-title">{{profile.nickname || '本地访客'}}</view>
+      <view class="muted">资料保存在本机；投稿时会上传昵称副本</view>
+    </view>
+  </view>
+
+  <view class="notification-entry card" bindtap="openNotifications">
+    <view class="notification-icon">🔔</view>
+    <view class="notification-main">
+      <view class="notification-title">通知与菜谱投稿</view>
+      <view class="muted">{{isCommunityAdmin ? '审核用户投稿，并查看自己的投稿进度' : '查看投稿审核进度和发布结果'}}</view>
+    </view>
+    <view wx:if="{{noticeCount}}" class="notification-badge">{{noticeCount > 99 ? '99+' : noticeCount}}</view>
+    <view class="notification-arrow">›</view>
+  </view>
+
+  <view class="section-title">本地资料</view>
+  <view class="settings-card card">
+    <form bindsubmit="saveNickname">
+      <view class="form-group">
+        <text class="form-label">昵称</text>
+        <input
+          class="form-input"
+          type="nickname"
+          name="nickname"
+          maxlength="24"
+          confirm-type="done"
+          placeholder="填写一个称呼"
+          value="{{nicknameInput}}"
+          bindinput="onNicknameInput"
+          bindblur="onNicknameBlur"
+          bindconfirm="saveNickname"
+        />
+      </view>
+      <button class="btn btn-secondary btn-small" form-type="submit">保存昵称</button>
+    </form>
+    <view class="setting-row">
+      <view>
+        <view>按健康记录推荐</view>
+        <view class="muted setting-help">关闭后首页展示完整家常菜</view>
+      </view>
+      <switch color="#2f6f4e" checked="{{profile.healthRecommendationEnabled}}" bindchange="toggleHealthRecommendation" />
+    </view>
+  </view>
+
+  <view class="section-title">过敏与忌口</view>
+  <view class="settings-card card">
+    <view class="setting-help">选择后，搜索、健康推荐和随机抽取会默认排除相关菜谱。</view>
+    <view class="allergy-grid">
+      <view
+        wx:for="{{allergenOptions}}"
+        wx:key="name"
+        class="allergy-chip {{item.selected ? 'active' : ''}}"
+        data-value="{{item.name}}"
+        bindtap="toggleAllergy"
+      >{{item.name}}</view>
+    </view>
+    <view class="form-group avoided-field">
+      <text class="form-label">其他不吃的食材</text>
+      <input class="form-input" placeholder="例如：香菜、洋葱，用顿号分隔" value="{{avoidedInput}}" bindinput="onAvoidedInput" />
+    </view>
+    <button class="btn btn-secondary btn-small" bindtap="saveAvoided">保存忌口</button>
+    <view class="allergy-warning">严重过敏不能只依赖本程序，请核对食品标签，并留意厨房交叉接触风险。</view>
+  </view>
+
+  <view class="section-title">帮助与反馈</view>
+  <view class="feedback-card card">
+    <view class="feedback-icon">💬</view>
+    <view class="feedback-main">
+      <view class="feedback-title">遇到问题，告诉我们</view>
+      <view class="feedback-copy">可描述菜名、操作步骤，或直接发送截图。消息会进入小程序客服会话。</view>
+    </view>
+    <button class="feedback-button" open-type="contact" session-from="today-eat-feedback">意见反馈</button>
+  </view>
+
+  <view class="section-title">隐私与数据</view>
+  <view class="data-menu card">
+    <view class="menu-row" bindtap="openSpecialHealth"><text>适用人群与健康状况</text><text>›</text></view>
+    <view class="menu-row" bindtap="openPrivacy"><text>隐私说明与使用边界</text><text>›</text></view>
+    <view class="menu-row" bindtap="clearHealth"><text>清除健康记录</text><text>›</text></view>
+    <view class="menu-row" bindtap="clearDraws"><text>清除抽取历史</text><text>›</text></view>
+    <view class="menu-row danger-text" bindtap="clearAll"><text>清除全部个人数据</text><text>›</text></view>
+  </view>
+</view>

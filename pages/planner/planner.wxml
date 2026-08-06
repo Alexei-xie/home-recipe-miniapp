@@ -1,0 +1,64 @@
+<view class="page planner-page">
+  <view class="planner-hero card">
+    <view>
+      <text class="planner-kicker">MEAL RHYTHM</text>
+      <view class="planner-title">今天吃什么，轻松安排</view>
+      <view class="planner-copy">菜单负责决定吃什么，采购负责带着清单去买。</view>
+    </view>
+    <text class="planner-icon">🧺</text>
+  </view>
+
+  <view class="planner-tabs card">
+    <view class="planner-tab {{activeTab === 'plan' ? 'active' : ''}}" data-tab="plan" bindtap="switchTab">🍽️ 菜单 <text wx:if="{{planRecipes.length}}">{{planRecipes.length}}</text></view>
+    <view class="planner-tab {{activeTab === 'shopping' ? 'active' : ''}}" data-tab="shopping" bindtap="switchTab">🧺 采购 <text wx:if="{{pendingShoppingCount}}">{{pendingShoppingCount}}</text></view>
+  </view>
+
+  <view wx:if="{{activeTab === 'plan'}}" class="date-picker card">
+    <text>计划日期</text>
+    <picker mode="date" value="{{selectedDate}}" end="{{maxDate}}" bindchange="changeDate">
+      <view class="date-value">{{selectedDate}}　›</view>
+    </picker>
+  </view>
+
+  <scroll-view wx:if="{{activeTab === 'plan'}}" scroll-x class="week-scroll">
+    <view class="week-days">
+      <view wx:for="{{weekDays}}" wx:key="value" class="week-day {{item.active ? 'active' : ''}}" data-date="{{item.value}}" bindtap="chooseDay">
+        <text>{{item.label}}</text><text class="week-date">{{item.day}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{activeTab === 'plan'}}" class="section-title">{{selectedDate}} 的菜单</view>
+  <view wx:if="{{activeTab === 'plan' && planRecipes.length}}" class="plan-list card">
+    <view wx:for="{{planRecipes}}" wx:key="id" class="plan-row">
+      <view class="plan-open" data-id="{{item.id}}" bindtap="openRecipe">
+        <text class="plan-emoji">{{item.coverEmoji}}</text>
+        <view><view class="plan-name">{{item.name}} <text wx:if="{{item.isCooked}}" class="cooked-label">✓ 已做</text></view><view class="muted">{{item.mealType}} · {{item.durationMinutes}} 分钟</view></view>
+      </view>
+      <text class="remove-link" data-id="{{item.id}}" bindtap="removePlanRecipe">移除</text>
+    </view>
+  </view>
+  <view wx:if="{{activeTab === 'plan' && !planRecipes.length}}" class="empty card">
+    <text class="empty-emoji">🍽️</text>
+    <view>还没有安排菜谱</view>
+    <view class="muted">在菜谱详情页点“加入今日菜单”。</view>
+    <button class="btn btn-secondary btn-small planner-empty-button" bindtap="goHome">浏览菜谱</button>
+  </view>
+
+  <view wx:if="{{activeTab === 'shopping'}}" class="shopping-heading">
+    <view class="section-title">采购清单 <text wx:if="{{pendingShoppingCount}}" class="shopping-pending">还需购买 {{pendingShoppingCount}} 项</text></view>
+    <text wx:if="{{checkedCount}}" class="clear-checked" bindtap="clearChecked">清除已购 {{checkedCount}}</text>
+  </view>
+  <view wx:if="{{activeTab === 'shopping' && shoppingList.length}}" class="shopping-list card">
+    <view wx:for="{{shoppingList}}" wx:key="id" class="shopping-row {{item.checked ? 'checked' : ''}}">
+      <view class="check-dot {{item.checked ? 'active' : ''}}" data-id="{{item.id}}" bindtap="toggleShoppingItem">{{item.checked ? '✓' : ''}}</view>
+      <view class="shopping-main" data-id="{{item.id}}" bindtap="toggleShoppingItem">
+        <view>{{item.name}} <text class="shopping-amount">{{item.amount}}</text></view>
+        <view class="shopping-package">{{item.purchaseHint}}</view>
+        <view class="shopping-meta"><text class="muted">来自：{{item.recipeName}}</text></view>
+      </view>
+      <text class="remove-link" data-id="{{item.id}}" bindtap="removeShoppingItem">移除</text>
+    </view>
+  </view>
+  <view wx:if="{{activeTab === 'shopping' && !shoppingList.length}}" class="shopping-empty card">把菜谱加入采购清单后，食材会自动列在这里。</view>
+</view>
