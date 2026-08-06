@@ -36,7 +36,8 @@ recipesToValidate.forEach((recipe) => {
   const sourceRules = {
     Unlicense: /^https:\/\/github\.com\/Anduin2017\/HowToCook\/blob\//,
     'CC BY-SA 4.0': /^https:\/\/en\.wikibooks\.org\/wiki\/Cookbook:/,
-    'CC0-1.0': /^https:\/\/recipecommons\.org\//
+    'CC0-1.0': /^https:\/\/recipecommons\.org\//,
+    'Open Recipe 可分享与修改声明': /^https:\/\/uraplutonium\.github\.io\/open-recipe\//
   }
   if (!recipe.referenceUrl || !sourceRules[recipe.sourceLicense] || !sourceRules[recipe.sourceLicense].test(recipe.referenceUrl)) {
     errors.push(`${recipe.id}: 缺少与许可匹配的可核验原始做法链接`)
