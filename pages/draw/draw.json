@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "抽食谱",
+  "enableShareAppMessage": true,
+  "enableShareTimeline": true,
   "navigationBarBackgroundColor": "#254d38"
 }

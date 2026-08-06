@@ -1,6 +1,7 @@
 const storage = require('../../utils/storage')
 const community = require('../../utils/community')
 const { ALLERGENS } = require('../../data/recipes')
+const share = require('../../utils/share')
 
 Page({
   data: {
@@ -13,8 +14,17 @@ Page({
   },
 
   onShow() {
+    share.enableShareMenu()
     this.loadProfile()
     this.loadCommunityStatus()
+  },
+
+  onShareAppMessage() {
+    return share.appMessage()
+  },
+
+  onShareTimeline() {
+    return share.timeline()
   },
 
   loadCommunityStatus() {

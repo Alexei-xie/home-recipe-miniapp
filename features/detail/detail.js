@@ -3,6 +3,7 @@ const health = require('../../utils/health')
 const imageService = require('../../utils/image-service')
 const nutrition = require('../../utils/nutrition')
 const community = require('../../utils/community')
+const share = require('../../utils/share')
 
 function scaledAmount(amount, ratio) {
   const raw = String(amount || '适量')
@@ -39,6 +40,7 @@ Page({
 
   onLoad(options) {
     this.recipeId = options.id
+    share.enableShareMenu()
   },
 
   onShow() {
@@ -202,17 +204,19 @@ Page({
 
   onShareAppMessage() {
     const recipe = this.data.recipe
+    if (!recipe || recipe.source === 'custom') return share.appMessage()
     return {
-      title: recipe ? `分享菜谱：${recipe.name}` : '今日食签菜谱',
-      path: recipe ? `/features/detail/detail?id=${recipe.id}` : '/pages/index/index'
+      title: `菜谱｜${recipe.name}`,
+      path: `/features/detail/detail?id=${encodeURIComponent(recipe.id)}`
     }
   },
 
   onShareTimeline() {
     const recipe = this.data.recipe
+    if (!recipe || recipe.source === 'custom') return share.timeline()
     return {
-      title: recipe ? `分享菜谱：${recipe.name}` : '今日食签菜谱',
-      query: recipe ? `id=${recipe.id}` : ''
+      title: `菜谱｜${recipe.name}`,
+      query: `id=${encodeURIComponent(recipe.id)}`
     }
   },
 

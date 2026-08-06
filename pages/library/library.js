@@ -1,4 +1,5 @@
 const storage = require('../../utils/storage')
+const share = require('../../utils/share')
 
 Page({
   data: {
@@ -7,7 +8,16 @@ Page({
   },
 
   onShow() {
+    share.enableShareMenu()
     this.loadRecipes()
+  },
+
+  onShareAppMessage() {
+    return share.appMessage({ title: '来「今日食签」收藏你喜欢的家常菜谱' })
+  },
+
+  onShareTimeline() {
+    return share.timeline({ title: '今日食签｜收藏家常菜谱，解决今天吃什么' })
   },
 
   loadRecipes() {
