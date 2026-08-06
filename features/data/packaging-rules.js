@@ -1,4 +1,4 @@
-// 常见零售包装/起购规格。fresh 表示散称，incrementG 是常见最小称重步进；
+// 分包采购清单使用：常见零售包装/起购规格。fresh 表示散称，incrementG 是常见最小称重步进；
 // packaged 表示需购买完整包装；用于采购清单的数量换算，不涉及价格。
 const EXACT_PACKAGING_RULES = {
   鸡蛋: { mode: 'packaged', packageSizeG: 500, unitsPerPackage: 10, label: '10枚装（约500克）' },

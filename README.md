@@ -37,7 +37,7 @@ tcb -e cloud1-d8gd0cz7te6173bb3 storage upload /tmp/today-eat-source-covers/reci
 
 - 菜谱详情会根据食材用量计算每份热量、蛋白质、碳水、脂肪、膳食纤维，以及钠、钾、钙、铁、维生素 A/C/E 和叶酸，并同时展示宏量及微量数据覆盖率。
 - 营养基础值首批参考 USDA FoodData Central 公共领域（CC0）数据；中国食物成分查询平台仅作为产品调研来源，未复制其受版权保护的数据。
-- `scripts/build-usda-nutrition.js` 可从 USDA Foundation Foods 与 SR Legacy 官方 JSON 重新生成 `data/food-micros.js`，当前覆盖 99 种标准食材。
+- `scripts/build-usda-nutrition.js` 可从 USDA Foundation Foods 与 SR Legacy 官方 JSON 重新生成 `features/data/food-micros.js`，当前覆盖 99 种标准食材。
 - 烹饪后微量营养采用 USDA《Table of Nutrient Retention Factors, Release 6》整理的家庭烹饪方式通用保留率；系统会从菜名和步骤识别凉拌、蒸、煮、汤羹、炒、煎炸或烘烤。该修正仍是估算，不代表实验室检测。
 - 今日计划页保留菜单安排和采购清单，不提供采购价格、预算生成或平台比价。
 - 采购清单会按常见整包规格或散称起购步进，显示需求量、建议购买包数和预计余量。

@@ -1,5 +1,5 @@
 const storage = require('../../utils/storage')
-const nutrition = require('../../utils/nutrition')
+const nutrition = require('../utils/nutrition')
 
 function getPackageUnit(label) {
   if (label.includes('瓶')) return '瓶'

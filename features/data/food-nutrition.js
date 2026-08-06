@@ -1,4 +1,4 @@
-// 每 100 克可食部的参考值。首批采用 USDA FoodData Central 公共领域数据的常见食材近似值，
+// 分包营养分析使用：每 100 克可食部的参考值。首批采用 USDA FoodData Central 公共领域数据的常见食材近似值，
 // 倒数第二个数值是旧版数据兼容占位，不会写入导出的食材对象；最后一个数值是常见单个重量。
 function food(name, kcal, protein, carbs, fat, fiber, _legacyValue, unitWeight, aliases = []) {
   return { name, kcal, protein, carbs, fat, fiber, unitWeight, aliases }

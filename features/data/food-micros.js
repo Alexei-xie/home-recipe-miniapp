@@ -1,4 +1,4 @@
-// 此文件由 scripts/build-usda-nutrition.js 从 USDA FoodData Central Foundation Foods / SR Legacy 生成。
+// 分包营养分析使用；由 scripts/build-usda-nutrition.js 从 USDA FoodData Central Foundation Foods / SR Legacy 生成。
 // 数据单位均为每100克可食部；USDA FDC 数据按 CC0 发布。
 const FOOD_MICROS = {
   "番茄": {
