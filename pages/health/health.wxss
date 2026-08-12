@@ -133,18 +133,32 @@
 .pregnancy-grid view text:last-child { margin-top: 4rpx; color: #8a7b75; font-size: 20rpx; }
 .postpartum-title { margin-top: 16rpx; color: #554b72; font-size: 31rpx; font-weight: 800; }
 
-.record-form {
-  padding: 28rpx;
+.record-card {
+  padding: 24rpx 28rpx 28rpx;
+  overflow: hidden;
   background: linear-gradient(145deg, #fffefb, #f8fbf6);
+}
+
+.record-form {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .dual-fields {
   display: flex;
+  align-items: flex-start;
   gap: 18rpx;
 }
 
 .dual-fields .form-group {
   flex: 1;
+  min-width: 0;
+}
+
+.record-form .form-input {
+  min-width: 0;
 }
 
 .draft-bmi {
@@ -166,9 +180,16 @@
 
 .confirm-panel {
   margin-bottom: 26rpx;
-  padding: 8rpx 20rpx;
+  padding: 18rpx 20rpx 20rpx;
   border-radius: 18rpx;
   background: #f1f4ef;
+}
+
+.confirm-heading {
+  padding-bottom: 8rpx;
+  color: #30533e;
+  font-size: 24rpx;
+  font-weight: 800;
 }
 
 .confirm-row {
@@ -184,6 +205,28 @@
   border-bottom: none;
 }
 
+.adult-eligibility {
+  margin-top: 14rpx;
+  padding: 14rpx 16rpx;
+  border-radius: 13rpx;
+  color: #8a694d;
+  background: #fff4e5;
+  font-size: 21rpx;
+  line-height: 1.5;
+}
+
+.adult-eligibility.eligible {
+  color: #2f6f4e;
+  background: #e4f1e7;
+}
+
+.boundary-note {
+  margin-top: 13rpx;
+  color: #79827d;
+  font-size: 20rpx;
+  line-height: 1.55;
+}
+
 .special-confirm-panel { display: flex; align-items: center; justify-content: space-between; margin-bottom: 26rpx; padding: 22rpx; border-radius: 18rpx; background: #f1f4ef; }
 .special-confirm-title { color: #30533e; font-weight: 800; }
 .special-confirm-panel .muted { font-size: 21rpx; }
@@ -191,6 +234,16 @@
 
 .record-form .btn {
   width: 100%;
+}
+
+.record-error {
+  margin: -4rpx 0 20rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 14rpx;
+  color: #a14435;
+  background: #fff0ed;
+  font-size: 23rpx;
+  line-height: 1.5;
 }
 
 .trend-header {

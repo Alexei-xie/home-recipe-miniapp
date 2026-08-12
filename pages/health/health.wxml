@@ -69,73 +69,83 @@
   <view wx:else class="bmi-empty card">
     <view class="bmi-empty-icon">◌</view>
     <view>
-      <view class="bmi-empty-title">尚未计算 BMI</view>
-      <view class="muted">保存人群信息、身高和体重后即可查看适用的筛查参考。</view>
+      <view class="bmi-empty-title">{{bmiEmptyTitle}}</view>
+      <view class="muted">{{bmiEmptyText}}</view>
     </view>
   </view>
 
   <view class="section-title">记录一次</view>
-  <form class="record-form card" bindsubmit="saveRecord">
-    <view class="dual-fields">
-      <view class="form-group">
-        <text class="form-label">身高（cm）</text>
-        <input
-          class="form-input"
-          type="digit"
-          name="heightCm"
-          maxlength="5"
-          placeholder="例如 168.5"
-          value="{{heightInput}}"
-          bindinput="onHeightInput"
-        />
+  <view class="record-card card">
+    <form class="record-form" bindsubmit="saveRecord">
+      <view class="dual-fields">
+        <view class="form-group">
+          <text class="form-label">身高（cm）</text>
+          <input
+            class="form-input"
+            type="digit"
+            name="heightCm"
+            maxlength="5"
+            placeholder="例如 168.5"
+            value="{{heightInput}}"
+            bindinput="onHeightInput"
+            bindblur="onHeightInput"
+            confirm-type="next"
+            cursor-spacing="24"
+          />
+        </view>
+        <view class="form-group">
+          <text class="form-label">体重（kg）</text>
+          <input
+            class="form-input"
+            type="digit"
+            name="weightKg"
+            maxlength="5"
+            placeholder="例如 60.5"
+            value="{{weightInput}}"
+            bindinput="onWeightInput"
+            bindblur="onWeightInput"
+            confirm-type="done"
+            cursor-spacing="24"
+          />
+        </view>
+      </view>
+      <view wx:if="{{draftBmiInfo}}" class="draft-bmi">
+        <text>本次筛查参考</text>
+        <text class="draft-bmi-value">{{draftBmiInfo.value}} · {{draftBmiInfo.label}}</text>
       </view>
       <view class="form-group">
-        <text class="form-label">体重（kg）</text>
-        <input
-          class="form-input"
-          type="digit"
-          name="weightKg"
-          maxlength="5"
-          placeholder="例如 60.5"
-          value="{{weightInput}}"
-          bindinput="onWeightInput"
-        />
+        <text class="form-label">记录日期</text>
+        <picker mode="date" value="{{recordDate}}" end="{{maxDate}}" bindchange="onDateChange">
+          <view class="picker-field">{{recordDate}}　›</view>
+        </picker>
       </view>
-    </view>
-    <view wx:if="{{draftBmiInfo}}" class="draft-bmi">
-      <text>本次筛查参考</text>
-      <text class="draft-bmi-value">{{draftBmiInfo.value}} · {{draftBmiInfo.label}}</text>
-    </view>
-    <view class="form-group">
-      <text class="form-label">记录日期</text>
-      <picker mode="date" value="{{recordDate}}" end="{{maxDate}}" bindchange="onDateChange">
-        <view class="picker-field">{{recordDate}}　›</view>
-      </picker>
-    </view>
 
-    <view wx:if="{{adultMode}}" class="confirm-panel">
-      <view class="confirm-row">
-        <text>我已满 18 周岁</text>
-        <switch color="#2f6f4e" checked="{{adultConfirmedDraft}}" data-field="adultConfirmedDraft" bindchange="toggleConfirm" />
+      <view wx:if="{{adultMode}}" class="confirm-panel">
+        <view class="confirm-heading">普通成人 BMI 适用条件</view>
+        <view class="confirm-row">
+          <text>我已满 18 周岁</text>
+          <switch color="#2f6f4e" checked="{{adultConfirmedDraft}}" data-field="adultConfirmedDraft" bindchange="toggleConfirm" />
+        </view>
+        <view class="confirm-row">
+          <text>我当前不处于孕期</text>
+          <switch color="#2f6f4e" checked="{{notPregnantDraft}}" data-field="notPregnantDraft" bindchange="toggleConfirm" />
+        </view>
+        <view class="adult-eligibility {{adultConfirmedDraft && notPregnantDraft ? 'eligible' : ''}}">
+          {{adultConfirmedDraft && notPregnantDraft ? '✓ 可使用普通成人 BMI 分级和饮食方向' : '记录仍可保存；未同时满足时不显示普通成人分级和自动配餐'}}
+        </view>
+        <view class="boundary-note">BMI 只是体重筛查指标，不构成诊断、治疗或个体化营养处方。</view>
       </view>
-      <view class="confirm-row">
-        <text>我当前不处于孕期</text>
-        <switch color="#2f6f4e" checked="{{notPregnantDraft}}" data-field="notPregnantDraft" bindchange="toggleConfirm" />
+      <view wx:else class="special-confirm-panel" bindtap="openSpecialHealth">
+        <view>
+          <view class="special-confirm-title">{{populationLabel}}</view>
+          <view class="muted">{{specialGuidanceConfirmed ? '已确认特殊人群使用边界' : '请先补充信息并确认使用边界'}}</view>
+        </view>
+        <view class="special-confirm-arrow">›</view>
       </view>
-      <view class="confirm-row">
-        <text>我理解 BMI 仅用于成人体重筛查</text>
-        <switch color="#2f6f4e" checked="{{understoodDraft}}" data-field="understoodDraft" bindchange="toggleConfirm" />
-      </view>
-    </view>
-    <view wx:else class="special-confirm-panel" bindtap="openSpecialHealth">
-      <view>
-        <view class="special-confirm-title">{{populationLabel}}</view>
-        <view class="muted">{{specialGuidanceConfirmed ? '已确认特殊人群使用边界' : '请先补充信息并确认使用边界'}}</view>
-      </view>
-      <view class="special-confirm-arrow">›</view>
-    </view>
-    <button class="btn btn-primary" form-type="submit">保存记录并查看方向</button>
-  </form>
+      <view wx:if="{{formError}}" class="record-error">{{formError}}</view>
+      <button class="btn btn-primary" form-type="submit">保存记录并查看方向</button>
+    </form>
+  </view>
 
   <view wx:if="{{conditionGuidance.length}}" class="condition-summary card">
     <view class="condition-summary-title">已暂停 BMI 自动配餐</view>

@@ -148,7 +148,13 @@ function buildSpecialPopulationAssessment(profile, latestWeight, now = new Date(
     note: conditions.length ? '已选择需要临床评估的健康状况，暂不显示通用孕期增重范围，请结合产检结果咨询产科或临床营养师。' : ''
   }
   if (type === 'postpartum') return { type, label: getPopulationLabel(type), bmi: null, conditions, note: '产后恢复受分娩方式、哺乳、睡眠和疾病情况影响，不使用普通成人 BMI 自动推荐减重食谱。' }
-  return { type: 'adult', label: getPopulationLabel('adult'), bmi, adult: classifyAdultBMI(bmi), conditions }
+  return {
+    type: 'adult',
+    label: getPopulationLabel('adult'),
+    bmi,
+    adult: profile.adultConfirmed ? classifyAdultBMI(bmi) : null,
+    conditions
+  }
 }
 
 function getLatestWeight(records) {

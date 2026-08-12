@@ -58,6 +58,15 @@ function testHealthRules() {
   assert.strictEqual(childAssessment.type, 'child')
   assert(childAssessment.child)
 
+  const unconfirmedAdultAssessment = health.buildSpecialPopulationAssessment({
+    populationType: 'adult',
+    heightCm: 170,
+    adultConfirmed: false,
+    healthConditions: []
+  }, { weightKg: 68 })
+  assert.strictEqual(Number(unconfirmedAdultAssessment.bmi.toFixed(1)), 23.5)
+  assert.strictEqual(unconfirmedAdultAssessment.adult, null)
+
   const eggFree = health.filterRecipesByDietaryRestrictions(BUILTIN_RECIPES, {
     allergies: ['蛋'],
     avoidedIngredients: []
@@ -337,13 +346,27 @@ function testStorageRules() {
 
   const storage = require('../utils/storage')
   storage.initStorage()
-  assert.strictEqual(storage.SCHEMA_VERSION, 13)
+  assert.strictEqual(storage.SCHEMA_VERSION, 14)
   assert.strictEqual(storage.getProfile().populationType, 'adult')
+  assert.strictEqual(storage.getProfile().adultAgeConfirmed, false)
+  assert.strictEqual(storage.getProfile().notPregnantConfirmed, false)
+  const migratedAdultProfile = storage.migrateLocalData({
+    schemaVersion: 13,
+    profile: { adultConfirmed: true, populationType: 'adult' }
+  }).profile
+  assert.strictEqual(migratedAdultProfile.adultAgeConfirmed, true)
+  assert.strictEqual(migratedAdultProfile.notPregnantConfirmed, true)
+  assert.strictEqual(migratedAdultProfile.adultConfirmed, true)
   storage.saveProfile({ healthConditions: ['fattyLiver'] })
   assert.deepStrictEqual(storage.getProfile().healthConditions, ['fattyLiver'])
   assert.strictEqual(storage.normalizeCustomRecipe({ cuisine: '粤菜' }).cuisine, '家常菜')
   assert.strictEqual(storage.normalizeCustomRecipe({ cuisine: '泰菜' }).cuisine, '家常菜')
-  storage.saveProfile({ heightCm: 168, adultConfirmed: true })
+  storage.saveProfile({
+    heightCm: 168,
+    adultAgeConfirmed: true,
+    notPregnantConfirmed: true,
+    adultConfirmed: true
+  })
   storage.saveWeightRecord('2026-07-28', 60)
   storage.saveWeightRecord('2026-07-28', 61)
   assert.strictEqual(storage.getWeightRecords().length, 1)

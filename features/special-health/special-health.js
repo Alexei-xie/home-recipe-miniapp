@@ -135,6 +135,9 @@ Page({
     }
     const healthConditions = (this.data.selectedConditions || [])
       .filter(key => key !== 'gestationalDiabetes' || type === 'pregnant')
+    const currentProfile = storage.getProfile()
+    const adultAgeConfirmed = type === 'adult' && Boolean(currentProfile.adultAgeConfirmed)
+    const notPregnantConfirmed = type === 'adult' && Boolean(currentProfile.notPregnantConfirmed)
     storage.saveProfile({
       populationType: type,
       birthDate: type === 'child' ? this.data.birthDate : '',
@@ -144,7 +147,9 @@ Page({
       singletonPregnancyConfirmed: type === 'pregnant' && this.data.singletonPregnancyConfirmed,
       healthConditions,
       specialGuidanceConfirmed: type === 'adult' ? false : this.data.specialGuidanceConfirmed,
-      adultConfirmed: type === 'adult' ? storage.getProfile().adultConfirmed : false
+      adultAgeConfirmed,
+      notPregnantConfirmed,
+      adultConfirmed: adultAgeConfirmed && notPregnantConfirmed
     })
     wx.showToast({ title: '设置已保存', icon: 'success' })
     setTimeout(() => wx.navigateBack(), 500)

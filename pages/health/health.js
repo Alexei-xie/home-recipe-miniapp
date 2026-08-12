@@ -17,6 +17,15 @@ function todayString() {
   return `${year}-${month}-${day}`
 }
 
+function resolveMeasurement(formValue, liveValue) {
+  const candidates = [formValue, liveValue]
+  for (const value of candidates) {
+    const parsed = health.parseMeasurement(value)
+    if (parsed !== null) return parsed
+  }
+  return null
+}
+
 Page({
   data: {
     heightInput: '',
@@ -25,14 +34,14 @@ Page({
     maxDate: todayString(),
     adultConfirmedDraft: false,
     notPregnantDraft: false,
-    understoodDraft: false,
-    profileConfirmed: false,
     adultMode: true,
     populationLabel: '普通成人',
     specialGuidanceConfirmed: false,
     specialAssessment: null,
     conditionGuidance: [],
     bmiInfo: null,
+    bmiEmptyTitle: '尚未计算 BMI',
+    bmiEmptyText: '保存人群信息、身高和体重后即可查看适用的筛查参考。',
     draftBmiInfo: null,
     latestWeight: null,
     weightChange: null,
@@ -42,7 +51,8 @@ Page({
     trendRecords: [],
     recommendationVisible: false,
     timeRecommendation: null,
-    recommendationRotation: 0
+    recommendationRotation: 0,
+    formError: ''
   },
 
   onShow() {
@@ -77,26 +87,30 @@ Page({
     const category = adultMode ? assessment.adult : null
     const previous = records.length > 1 ? records[1] : null
     const change = latest && previous ? latest.weightKg - previous.weightKg : null
+    const adultBmiPending = adultMode && bmi !== null && !profile.adultConfirmed
     this.setData({
       heightInput: profile.heightCm === null ? '' : String(profile.heightCm),
       weightInput: '',
-      profileConfirmed: profile.adultConfirmed,
       adultMode,
       populationLabel: assessment.label,
       specialGuidanceConfirmed: profile.specialGuidanceConfirmed,
       specialAssessment: assessment,
       conditionGuidance: assessment.conditions || [],
-      adultConfirmedDraft: profile.adultConfirmed,
-      notPregnantDraft: profile.adultConfirmed,
-      understoodDraft: profile.adultConfirmed,
+      adultConfirmedDraft: Boolean(profile.adultAgeConfirmed),
+      notPregnantDraft: Boolean(profile.notPregnantConfirmed),
       latestWeight: latest,
       draftBmiInfo: null,
+      formError: '',
       bmiInfo: category ? {
         value: bmi.toFixed(1),
         label: category.label,
         key: category.key,
         direction: category.direction
       } : null,
+      bmiEmptyTitle: adultBmiPending ? '记录已保存，未启用成人分级' : '尚未计算 BMI',
+      bmiEmptyText: adultBmiPending
+        ? '普通成人分级需要同时满足“已满 18 周岁”和“当前不处于孕期”。你仍可继续记录体重趋势。'
+        : '保存人群信息、身高和体重后即可查看适用的筛查参考。',
       weightChange: change,
       weightChangeText: change === null ? '' : `${change > 0 ? '+' : ''}${change.toFixed(1)} kg`,
       records
@@ -104,11 +118,13 @@ Page({
   },
 
   onHeightInput(event) {
-    this.setData({ heightInput: event.detail.value }, () => this.updateDraftBmi())
+    const value = event && event.detail ? String(event.detail.value || '') : ''
+    this.setData({ heightInput: value, formError: '' }, () => this.updateDraftBmi())
   },
 
   onWeightInput(event) {
-    this.setData({ weightInput: event.detail.value }, () => this.updateDraftBmi())
+    const value = event && event.detail ? String(event.detail.value || '') : ''
+    this.setData({ weightInput: value, formError: '' }, () => this.updateDraftBmi())
   },
 
   updateDraftBmi() {
@@ -116,16 +132,17 @@ Page({
     const weightKg = health.parseMeasurement(this.data.weightInput)
     const bmi = health.calculateBMI(heightCm, weightKg)
     const profile = this.currentProfile || storage.getProfile()
+    const adultEligible = this.data.adultConfirmedDraft && this.data.notPregnantDraft
     const category = (profile.populationType || 'adult') === 'child'
       ? health.classifyChildBMI(bmi, profile.birthDate, profile.biologicalSex)
       : (profile.populationType || 'adult') === 'adult'
-        ? health.classifyAdultBMI(bmi)
+        ? (adultEligible ? health.classifyAdultBMI(bmi) : null)
         : null
     this.setData({
-      draftBmiInfo: category ? {
+      draftBmiInfo: bmi === null ? null : {
         value: bmi.toFixed(1),
-        label: category.label
-      } : null
+        label: category ? category.label : '仅记录数值，未启用成人分级'
+      }
     })
   },
 
@@ -134,7 +151,15 @@ Page({
   },
 
   toggleConfirm(event) {
-    this.setData({ [event.currentTarget.dataset.field]: event.detail.value })
+    this.setData({
+      [event.currentTarget.dataset.field]: Boolean(event.detail.value),
+      formError: ''
+    }, () => this.updateDraftBmi())
+  },
+
+  showRecordError(message) {
+    this.setData({ formError: message })
+    wx.showToast({ title: message, icon: 'none', duration: 2500 })
   },
 
   saveRecord(event) {
@@ -143,48 +168,47 @@ Page({
       : {}
     const formHeight = String(formValue.heightCm || '').trim()
     const formWeight = String(formValue.weightKg || '').trim()
-    const heightValue = formHeight || this.data.heightInput
-    const weightValue = formWeight || this.data.weightInput
-    const heightCm = health.parseMeasurement(heightValue)
-    const weightKg = health.parseMeasurement(weightValue)
+    // 真机上点击提交与输入框失焦的时序并不完全一致：优先解析 form 值，
+    // form 值异常时再回退到 bindinput 持续保存的页面值。
+    const heightCm = resolveMeasurement(formHeight, this.data.heightInput)
+    const weightKg = resolveMeasurement(formWeight, this.data.weightInput)
     const profile = this.currentProfile || storage.getProfile()
     const type = profile.populationType || 'adult'
-    if (type === 'adult' && (!this.data.adultConfirmedDraft || !this.data.notPregnantDraft || !this.data.understoodDraft)) {
-      wx.showToast({ title: '请先确认成人适用条件', icon: 'none' })
-      return
-    }
-    if (type !== 'adult' && !profile.specialGuidanceConfirmed) {
-      wx.showToast({ title: '请先设置人群并确认使用边界', icon: 'none' })
-      return
-    }
+    const adultEligible = type === 'adult' && this.data.adultConfirmedDraft && this.data.notPregnantDraft
     if (heightCm === null || heightCm < 80 || heightCm > 250) {
-      wx.showToast({ title: '身高请输入 80–250 cm', icon: 'none' })
-      return
+      return this.showRecordError('请输入 80–250 cm 的有效身高')
     }
     const minWeight = type === 'child' ? 10 : 20
     if (weightKg === null || weightKg < minWeight || weightKg > 300) {
-      wx.showToast({ title: `体重请输入 ${minWeight}–300 kg`, icon: 'none' })
-      return
+      return this.showRecordError(`请输入 ${minWeight}–300 kg 的有效体重`)
+    }
+    if (type !== 'adult' && !profile.specialGuidanceConfirmed) {
+      return this.showRecordError('请先设置人群并确认使用边界')
     }
     if (type === 'child' && !health.classifyChildBMI(health.calculateBMI(heightCm, weightKg), profile.birthDate, profile.biologicalSex)) {
-      wx.showToast({ title: '儿童信息不完整或年龄不适用', icon: 'none' })
-      return
+      return this.showRecordError('儿童信息不完整或年龄不适用')
     }
     if (type === 'pregnant') {
       if (heightCm < 140 || !profile.prePregnancyWeightKg || profile.prePregnancyWeightKg > 125 || !profile.gestationalWeek || !profile.singletonPregnancyConfirmed) {
-        wx.showToast({ title: '当前情况不适用孕期参考范围', icon: 'none' })
-        return
+        return this.showRecordError('当前情况不适用孕期参考范围')
       }
     }
     const roundedHeight = Math.round(heightCm * 10) / 10
     const roundedWeight = Math.round(weightKg * 10) / 10
     storage.saveProfile({
       heightCm: roundedHeight,
-      adultConfirmed: type === 'adult',
+      adultAgeConfirmed: type === 'adult' && this.data.adultConfirmedDraft,
+      notPregnantConfirmed: type === 'adult' && this.data.notPregnantDraft,
+      adultConfirmed: adultEligible,
       healthRecommendationEnabled: true
     })
     storage.saveWeightRecord(this.data.recordDate, roundedWeight)
-    wx.showToast({ title: '记录已保存', icon: 'success' })
+    this.setData({ formError: '' })
+    wx.showToast({
+      title: type === 'adult' && !adultEligible ? '已保存，未启用成人分级' : '记录已保存',
+      icon: type === 'adult' && !adultEligible ? 'none' : 'success',
+      duration: 2500
+    })
     this.loadHealthData()
   },
 

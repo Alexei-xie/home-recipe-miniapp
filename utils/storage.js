@@ -2,7 +2,7 @@ const { BUILTIN_RECIPES, CUISINES, getBuiltinRecipe } = require('../data/recipes
 
 const STORAGE_KEY = 'today_eat_local_data'
 const COMMUNITY_STORAGE_KEY = 'today_eat_community_recipes'
-const SCHEMA_VERSION = 13
+const SCHEMA_VERSION = 14
 const WRITE_DEBOUNCE_MS = 120
 
 let cachedState = null
@@ -50,6 +50,8 @@ function defaultProfile() {
     nickname: '',
     avatarPath: '',
     adultConfirmed: false,
+    adultAgeConfirmed: false,
+    notPregnantConfirmed: false,
     healthRecommendationEnabled: true,
     heightCm: null,
     populationType: 'adult',
@@ -218,7 +220,9 @@ function migrateLegacyRecipes(state) {
 
 function migrateLocalData(rawData) {
   const state = Object.assign(defaultState(), rawData || {})
-  state.profile = Object.assign(defaultProfile(), state.profile || {}, { schemaVersion: SCHEMA_VERSION })
+  const rawProfile = state.profile || {}
+  const legacyAdultConfirmed = Boolean(rawProfile.adultConfirmed)
+  state.profile = Object.assign(defaultProfile(), rawProfile, { schemaVersion: SCHEMA_VERSION })
   state.profile.populationType = POPULATION_TYPES.includes(state.profile.populationType)
     ? state.profile.populationType
     : 'adult'
@@ -239,6 +243,14 @@ function migrateLocalData(rawData) {
     ? state.profile.healthConditions.filter(item => HEALTH_CONDITIONS.includes(item))
     : []))
   state.profile.specialGuidanceConfirmed = Boolean(state.profile.specialGuidanceConfirmed)
+  state.profile.adultAgeConfirmed = typeof rawProfile.adultAgeConfirmed === 'boolean'
+    ? rawProfile.adultAgeConfirmed
+    : legacyAdultConfirmed
+  state.profile.notPregnantConfirmed = typeof rawProfile.notPregnantConfirmed === 'boolean'
+    ? rawProfile.notPregnantConfirmed
+    : legacyAdultConfirmed
+  state.profile.adultConfirmed = state.profile.populationType === 'adult' &&
+    state.profile.adultAgeConfirmed && state.profile.notPregnantConfirmed
   state.weightRecords = Array.isArray(state.weightRecords) ? state.weightRecords : []
   state.customRecipes = Array.isArray(state.customRecipes)
     ? state.customRecipes.map(normalizeCustomRecipe)
@@ -839,6 +851,8 @@ function clearHealthData() {
     state.weightRecords = []
     state.profile.heightCm = null
     state.profile.adultConfirmed = false
+    state.profile.adultAgeConfirmed = false
+    state.profile.notPregnantConfirmed = false
     state.profile.populationType = 'adult'
     state.profile.birthDate = ''
     state.profile.biologicalSex = ''
