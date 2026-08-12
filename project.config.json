@@ -13,6 +13,10 @@
       {
         "value": "THIRD_PARTY_NOTICES.md",
         "type": "file"
+      },
+      {
+        "value": "marketing",
+        "type": "folder"
       }
     ],
     "include": []
