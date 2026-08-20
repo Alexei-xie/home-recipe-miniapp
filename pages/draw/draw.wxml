@@ -24,9 +24,11 @@
       <view class="muted">正在替你挑选…</view>
     </view>
     <view wx:elif="{{result}}" class="final-result">
-      <view class="result-ribbon">就吃这个</view>
-      <image wx:if="{{result.coverImage}}" class="result-image" src="{{result.coverImage}}" mode="aspectFill" data-id="{{result.id}}" data-src="{{result.coverImage}}" binderror="onResultImageError" />
-      <view wx:else class="stage-emoji">{{result.coverEmoji}}</view>
+      <view class="result-media">
+        <image wx:if="{{result.coverImage}}" class="result-image" src="{{result.coverImage}}" mode="aspectFill" data-id="{{result.id}}" data-src="{{result.coverImage}}" binderror="onResultImageError" />
+        <view wx:else class="stage-emoji">{{result.coverEmoji}}</view>
+        <view class="result-ribbon">就吃这个</view>
+      </view>
       <view class="stage-name">{{result.name}}</view>
       <view class="result-tags">
         <text class="tag">{{result.mealType}}</text>
