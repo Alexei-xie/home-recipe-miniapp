@@ -12,3 +12,4 @@
 .timer-card { display:flex; align-items:center; justify-content:space-between; margin-top:22rpx; padding:24rpx 28rpx; border-radius:24rpx; background:#e6f1e7; }
 .timer-label { color:#6f7e73; font-size:21rpx; }.timer-value { margin-top:2rpx; color:#28583d; font-size:40rpx; font-weight:800; }.timer-button,.finish-button { border:none; }.timer-button { margin:0; padding:12rpx 22rpx; border-radius:16rpx; color:#fff; background:#2f6f4e; font-size:24rpx; }.timer-button::after,.finish-button::after { border:none; }
 .cook-actions { display:flex; gap:16rpx; margin-top:28rpx; }.cook-actions .btn { flex:1; }.finish-button { width:100%; margin-top:20rpx; padding:20rpx; border-radius:18rpx; color:#8a5520; background:#f9e5bf; font-size:26rpx; }
+.timer-help { margin: 12rpx 8rpx 24rpx; color: #68786c; font-size: 23rpx; line-height: 1.6; }

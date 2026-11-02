@@ -3,15 +3,15 @@
 const cloudbase = require('../config/cloudbase')
 
 const CARTOON_COVERS = {
-  vegetable: '/assets/recipe-covers/tomato-eggs.webp',
+  vegetable: '/assets/recipe-covers/fallback-vegetable.png',
   seafood: '/assets/recipe-covers/seafood.webp',
   drink: '/assets/recipe-covers/cold-drink.webp',
   dessert: '/assets/recipe-covers/dessert.webp',
-  chicken: '/assets/recipe-covers/tomato-eggs.webp',
-  meat: '/assets/recipe-covers/tomato-eggs.webp',
-  soup: '/assets/recipe-covers/tomato-eggs.webp',
-  staple: '/assets/recipe-covers/tomato-eggs.webp',
-  spicy: '/assets/recipe-covers/tomato-eggs.webp'
+  chicken: '/assets/recipe-covers/fallback-chicken.png',
+  meat: '/assets/recipe-covers/fallback-meat.png',
+  soup: '/assets/recipe-covers/fallback-soup.png',
+  staple: '/assets/recipe-covers/fallback-staple.png',
+  spicy: '/assets/recipe-covers/fallback-spicy.png'
 }
 
 const SEAFOOD_RECIPE_IDS = new Set([
@@ -24,10 +24,43 @@ const SEAFOOD_RECIPE_IDS = new Set([
 // 否则小程序长时间驻留后台后会继续使用已经过期的地址。
 const DEFAULT_CLOUD_URL_TTL_MS = 60 * 60 * 1000
 const CACHE_EXPIRY_GUARD_MS = 60 * 1000
+const FAILURE_COOLDOWN_MS = 30 * 1000
+const FILE_URL_BATCH_SIZE = 50
 const cloudUrlCache = Object.create(null)
 const stepImageUrlCache = Object.create(null)
 const cloudCoverInFlight = Object.create(null)
 const stepImageInFlight = Object.create(null)
+const coverFailures = Object.create(null)
+const stepFailures = Object.create(null)
+
+function isCoolingDown(cache, key, fileId) {
+  const entry = cache[key]
+  if (!entry) return false
+  if (entry.retryAt <= Date.now() || entry.fileId !== fileId) {
+    delete cache[key]
+    return false
+  }
+  return true
+}
+
+async function getTempFilesBatched(fileList) {
+  const files = []
+  for (let start = 0; start < fileList.length; start += FILE_URL_BATCH_SIZE) {
+    const batch = fileList.slice(start, start + FILE_URL_BATCH_SIZE)
+    try {
+      const result = await wx.cloud.getTempFileURL({ fileList: batch })
+      const byId = new Map((result.fileList || []).filter(file => file.fileID).map(file => [file.fileID, file]))
+      batch.forEach((fileID, index) => {
+        const file = byId.get(fileID) || (result.fileList || [])[index]
+        files.push(file && (!file.fileID || file.fileID === fileID) ? file : { fileID })
+      })
+    } catch (error) {
+      console.warn('[recipe-image] 获取云端图片失败，稍后自动重试', error.errCode || error.code || '')
+      batch.forEach(fileID => files.push({ fileID }))
+    }
+  }
+  return { fileList: files }
+}
 
 function canUseCloudCover() {
   return cloudbase.isCloudCoverEnabled() && typeof wx !== 'undefined' && wx.cloud && typeof wx.cloud.getTempFileURL === 'function'
@@ -101,9 +134,13 @@ function invalidateCloudCover(recipeId, failedUrl) {
 
 function loadCloudCovers(recipes, options = {}) {
   const forceRecipeIds = new Set(options.forceRecipeIds || [])
-  forceRecipeIds.forEach(recipeId => delete cloudUrlCache[recipeId])
+  forceRecipeIds.forEach(recipeId => {
+    delete cloudUrlCache[recipeId]
+    delete coverFailures[recipeId]
+  })
   const pending = (recipes || []).filter(recipe =>
-    recipe && getPreferredCoverFileId(recipe) && !getCachedCloudCover(recipe.id, getPreferredCoverFileId(recipe))
+    recipe && getPreferredCoverFileId(recipe) && !getCachedCloudCover(recipe.id, getPreferredCoverFileId(recipe)) &&
+    !isCoolingDown(coverFailures, recipe.id, getPreferredCoverFileId(recipe))
   )
   if (!pending.length || !canUseCloudCover()) return Promise.resolve(cloudUrlCache)
   const unique = []
@@ -116,14 +153,16 @@ function loadCloudCovers(recipes, options = {}) {
     else unique.push(recipe)
   })
   if (unique.length) {
-    const request = wx.cloud.getTempFileURL({
-      fileList: unique.map(getPreferredCoverFileId)
-    }).then(result => {
+    const request = getTempFilesBatched(unique.map(getPreferredCoverFileId)).then(result => {
       ;(result.fileList || []).forEach((file, index) => {
         const recipe = unique[index]
         const entry = createCacheEntry(file, recipe && getPreferredCoverFileId(recipe))
-        if (recipe && entry) cloudUrlCache[recipe.id] = entry
-        else if (file) console.warn('[recipe-cover] 云端封面不可用', unique[index].id, file.errMsg || file.status)
+        if (recipe && entry) {
+          cloudUrlCache[recipe.id] = entry
+          delete coverFailures[recipe.id]
+        } else if (recipe) {
+          coverFailures[recipe.id] = { fileId: getPreferredCoverFileId(recipe), retryAt: Date.now() + FAILURE_COOLDOWN_MS }
+        }
       })
     }).catch(error => {
       console.warn('[recipe-cover] 获取云端封面失败', error)
@@ -158,26 +197,31 @@ function invalidateStepImageByUrl(failedUrl) {
 }
 
 function hydrateRecipeStepImages(recipe) {
-  if (!recipe || recipe.source !== 'builtin' || recipe.isLocalOverride) return Promise.resolve(recipe)
+  if (!recipe) return Promise.resolve(recipe)
   const steps = recipe.steps || []
   const paths = []
   steps.forEach(step => (step.imageCloudPaths || []).forEach(item => paths.push(item)))
   ;(recipe.processImageCloudPaths || []).forEach(item => paths.push(item))
   if (!paths.length || !canUseCloudCover()) return Promise.resolve(Object.assign({}, recipe, {
-    steps: steps.map(step => Object.assign({}, step, { images: [] })),
+    steps: steps.map(step => Object.assign({}, step, { images: step.image ? [step.image] : [] })),
     processImages: []
   }))
-  const pending = Array.from(new Set(paths.filter(item => !getCachedStepImage(item))))
+  const pending = Array.from(new Set(paths.filter(item => !getCachedStepImage(item) &&
+    !isCoolingDown(stepFailures, item, cloudbase.getRecipeStepImageFileId(item)))))
   const waiting = pending.map(item => stepImageInFlight[item]).filter(Boolean)
   const requestPaths = pending.filter(item => !stepImageInFlight[item])
   if (requestPaths.length) {
-    const request = wx.cloud.getTempFileURL({ fileList: requestPaths.map(item => cloudbase.getRecipeStepImageFileId(item)) })
+    const request = getTempFilesBatched(requestPaths.map(item => cloudbase.getRecipeStepImageFileId(item)))
       .then(result => {
         ;(result.fileList || []).forEach((file, index) => {
           const cloudPath = requestPaths[index]
           const entry = createCacheEntry(file, cloudbase.getRecipeStepImageFileId(cloudPath))
-          if (entry) stepImageUrlCache[cloudPath] = entry
-          else if (file) console.warn('[recipe-step] 步骤图不可用', requestPaths[index], file.errMsg || file.status)
+          if (entry) {
+            stepImageUrlCache[cloudPath] = entry
+            delete stepFailures[cloudPath]
+          } else {
+            stepFailures[cloudPath] = { fileId: cloudbase.getRecipeStepImageFileId(cloudPath), retryAt: Date.now() + FAILURE_COOLDOWN_MS }
+          }
         })
       })
       .catch(error => console.warn('[recipe-step] 获取步骤图失败', error))
@@ -190,7 +234,7 @@ function hydrateRecipeStepImages(recipe) {
   }
   return Promise.all(waiting).then(() => Object.assign({}, recipe, {
     steps: steps.map(step => Object.assign({}, step, {
-      images: (step.imageCloudPaths || []).map(getCachedStepImage).filter(Boolean)
+      images: (step.image ? [step.image] : []).concat((step.imageCloudPaths || []).map(getCachedStepImage).filter(Boolean))
     })),
     processImages: (recipe.processImageCloudPaths || []).map(getCachedStepImage).filter(Boolean)
   }))
@@ -243,7 +287,7 @@ function getRecipeInitialImage(recipe) {
   if (!recipe) return ''
   const coverImage = recipe.coverImage || ''
   if (coverImage && !/^cloud:\/\//.test(coverImage)) return coverImage
-  return getRecipeImageFallback(recipe)
+  return getCachedCloudCover(recipe.id, getPreferredCoverFileId(recipe)) || getRecipeImageFallback(recipe)
 }
 
 function resolveRecipeImage(recipe) {

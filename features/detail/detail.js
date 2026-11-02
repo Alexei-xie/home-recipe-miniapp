@@ -1,4 +1,5 @@
 const storage = require('../../utils/storage')
+const { getRecipe } = require('../utils/recipe-details')
 const health = require('../../utils/health')
 const imageService = require('../../utils/image-service')
 const nutrition = require('../utils/nutrition')
@@ -44,7 +45,7 @@ Page({
   },
 
   onShow() {
-    const recipe = storage.getRecipe(this.recipeId)
+    const recipe = getRecipe(this.recipeId)
     if (!recipe) {
       if (/^community_/.test(String(this.recipeId || '')) && !this.communityLookupAttempted) {
         this.communityLookupAttempted = true
@@ -195,7 +196,10 @@ Page({
   toggleCookedToday() {
     const recipe = this.data.recipe
     if (!recipe) return
-    const history = storage.markRecipeCooked(recipe.id)
+    let history
+    try { history = storage.markRecipeCooked(recipe.id) } catch (error) {
+      return wx.showToast({ title: error.message, icon: 'none' })
+    }
     const today = storage.getDateKey()
     const isCookedToday = history.some(item => item.recipeId === recipe.id && item.date === today)
     this.setData({ isCookedToday })
@@ -244,6 +248,11 @@ Page({
     wx.setClipboardData({ data: this.data.recipe.referenceUrl })
   },
 
+  copyRecipeLicense() {
+    if (!this.data.recipe.sourceLicenseUrl) return
+    wx.setClipboardData({ data: this.data.recipe.sourceLicenseUrl })
+  },
+
   copyTutorialLink(event) {
     const url = event.currentTarget.dataset.url
     const title = event.currentTarget.dataset.title || '外部教程'
@@ -277,7 +286,9 @@ Page({
       confirmColor: '#b44335',
       success: result => {
         if (!result.confirm) return
-        storage.clearBuiltinRecipeOverride(this.data.recipe.id)
+        try { storage.clearBuiltinRecipeOverride(this.data.recipe.id) } catch (error) {
+          return wx.showToast({ title: error.message, icon: 'none' })
+        }
         wx.showToast({ title: '已恢复原版', icon: 'success' })
         this.onShow()
       }

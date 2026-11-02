@@ -86,6 +86,10 @@ Page({
     this.setData({ [`reviewQueue[${index}].expanded`]: !this.data.reviewQueue[index].expanded })
   },
 
+  openCategories() {
+    wx.navigateTo({ url: '/features/categories/categories' })
+  },
+
   approve(event) {
     const item = this.data.reviewQueue[Number(event.currentTarget.dataset.index)]
     if (!item) return

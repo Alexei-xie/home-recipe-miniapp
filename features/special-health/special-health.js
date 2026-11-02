@@ -138,7 +138,7 @@ Page({
     const currentProfile = storage.getProfile()
     const adultAgeConfirmed = type === 'adult' && Boolean(currentProfile.adultAgeConfirmed)
     const notPregnantConfirmed = type === 'adult' && Boolean(currentProfile.notPregnantConfirmed)
-    storage.saveProfile({
+    try { storage.saveProfile({
       populationType: type,
       birthDate: type === 'child' ? this.data.birthDate : '',
       biologicalSex: type === 'child' ? this.data.biologicalSex : '',
@@ -150,7 +150,7 @@ Page({
       adultAgeConfirmed,
       notPregnantConfirmed,
       adultConfirmed: adultAgeConfirmed && notPregnantConfirmed
-    })
+    }) } catch (error) { return wx.showToast({ title: error.message, icon: 'none' }) }
     wx.showToast({ title: '设置已保存', icon: 'success' })
     setTimeout(() => wx.navigateBack(), 500)
   }

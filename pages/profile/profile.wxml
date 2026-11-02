@@ -20,6 +20,12 @@
     <view class="notification-arrow">›</view>
   </view>
 
+  <view wx:if="{{isCommunityAdmin}}" class="notification-entry card" bindtap="openCategories">
+    <view class="notification-icon">🗂️</view>
+    <view class="notification-main"><view class="notification-title">菜系与餐食分类管理</view><view class="muted">调整分类名称、排序与公共菜谱归类</view></view>
+    <view class="notification-arrow">›</view>
+  </view>
+
   <view class="section-title">本地资料</view>
   <view class="settings-card card">
     <form bindsubmit="saveNickname">
@@ -83,6 +89,7 @@
   <view class="data-menu card">
     <view class="menu-row" bindtap="openSpecialHealth"><text>适用人群与健康状况</text><text>›</text></view>
     <view class="menu-row" bindtap="openPrivacy"><text>隐私说明与使用边界</text><text>›</text></view>
+    <view class="menu-row" bindtap="openPrivacy"><text>个人备份与图片空间</text><text>›</text></view>
     <view class="menu-row" bindtap="clearHealth"><text>清除健康记录</text><text>›</text></view>
     <view class="menu-row" bindtap="clearDraws"><text>清除抽取历史</text><text>›</text></view>
     <view class="menu-row danger-text" bindtap="clearAll"><text>清除全部个人数据</text><text>›</text></view>

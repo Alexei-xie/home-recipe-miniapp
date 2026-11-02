@@ -21,14 +21,27 @@
   </view>
 
   <view class="section-title">保存与丢失风险</view>
+  <view class="text-card card backup-card">
+    <view class="backup-title">个人备份与图片空间</view>
+    <view>菜谱图片：{{imageUsageText}}</view>
+    <view wx:if="{{spaceWarning}}" class="space-warning">{{spaceWarning}}</view>
+    <view class="backup-actions">
+      <button class="btn btn-secondary btn-small" disabled="{{busy}}" bindtap="exportBackup">导出个人备份</button>
+      <button class="btn btn-secondary btn-small" disabled="{{busy}}" bindtap="importBackup">从文件恢复</button>
+    </view>
+    <view>备份包含个人信息且未加密，请仅发送给自己或保存至可信位置；草稿与社区缓存不包含在内。</view>
+    <button class="btn btn-secondary btn-small" disabled="{{busy || !unusedImageCount}}" bindtap="cleanImages">清理无引用旧图（{{unusedImageCount}}张）</button>
+    <view>图片清理有24小时保护期；新保存图片和被草稿引用的图片不会被清理。</view>
+  </view>
   <view class="text-card card">
     <view>· BMI、体重记录、头像、过敏和忌口数据不会随菜谱投稿上传。</view>
     <view>· 主动投稿时会上传菜谱文字、昵称副本、所选封面及公开教程链接，用于管理员审核和审核后的公共展示。</view>
     <view>· 投稿可以在“我的 → 通知与菜谱投稿”中撤回；已发布菜谱也可下架并删除云端投稿与封面。</view>
     <view>· 用户为自定义或内置菜谱替换的封面会复制到微信本地用户目录；删除、恢复原版或清除全部个人数据时会清理对应文件。</view>
-    <view>· 内置菜谱封面使用随代码包发布的卡通插画，不会为菜谱封面请求第三方图片服务。</view>
+    <view>· 内置封面优先读取 CloudBase 中的来源成品图或插画，失败时显示本地分类插画；图片请求不会携带健康记录。</view>
     <view>· 不同微信用户和不同小程序之间的本地缓存相互隔离。</view>
-    <view>· 清理微信存储、删除小程序数据或更换设备后，数据可能丢失且无法找回。</view>
+    <view>· 清理微信存储、删除小程序数据或更换设备后，本地数据可能丢失。请提前将个人备份导出到小程序之外，只有仍在小程序目录的文件不算异地备份。</view>
+    <view>· 清除全部个人数据会清理小程序目录中的备份副本；你已主动发送或保存在小程序之外的备份需自行删除。</view>
     <view>· 教学视频如配置远程地址，会由视频托管方提供；本程序不会向图片或视频服务上传你的健康数据。</view>
   </view>
 

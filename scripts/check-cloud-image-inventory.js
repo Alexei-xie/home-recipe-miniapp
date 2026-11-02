@@ -12,7 +12,7 @@
  */
 const fs = require('fs')
 const path = require('path')
-const { BUILTIN_RECIPES } = require('../data/recipes')
+const { BUILTIN_RECIPES, getBuiltinRecipe } = require('../features/data/recipe-details')
 const sourceCoverManifest = require('./source-cover-manifest.json')
 const stepImageManifest = require('./step-image-manifest.json')
 
@@ -27,7 +27,7 @@ function normalizeCloudPath(value) {
 
 function getExpectedReferences() {
   const references = []
-  BUILTIN_RECIPES.forEach(recipe => {
+  BUILTIN_RECIPES.map(recipe => getBuiltinRecipe(recipe.id)).forEach(recipe => {
     if (recipe.sourceCoverCloudPath) {
       references.push({ recipeId: recipe.id, type: 'cover', cloudPath: recipe.sourceCoverCloudPath })
     } else if (/^r\d{3}$/.test(recipe.id)) {

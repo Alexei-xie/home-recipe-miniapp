@@ -1,4 +1,5 @@
 const storage = require('../../utils/storage')
+const { getRecipe } = require('../utils/recipe-details')
 const imageService = require('../../utils/image-service')
 
 Page({
@@ -13,9 +14,11 @@ Page({
   },
 
   onLoad(options) {
+    this.accumulatedMs = 0
+    this.startedAt = null
     this.recipeId = options.id
     this.stepImageRetryCounts = Object.create(null)
-    const recipe = storage.getRecipe(options.id)
+    const recipe = getRecipe(options.id)
     this.setData({
       recipe,
       stepCount: recipe && recipe.steps ? recipe.steps.length : 0,
@@ -33,9 +36,13 @@ Page({
 
   onShow() {
     if (wx.setKeepScreenOn) wx.setKeepScreenOn({ keepScreenOn: true })
+    if (this.data.running) this.startTicker()
   },
 
-  onHide() { this.stopTimer() },
+  onHide() {
+    this.clearTicker()
+    if (wx.setKeepScreenOn) wx.setKeepScreenOn({ keepScreenOn: false })
+  },
   onUnload() {
     this.stopTimer()
     if (wx.setKeepScreenOn) wx.setKeepScreenOn({ keepScreenOn: false })
@@ -48,16 +55,33 @@ Page({
 
   toggleTimer() {
     if (this.data.running) return this.stopTimer()
+    this.startedAt = Date.now()
     this.setData({ running: true })
-    this.timer = setInterval(() => {
-      const elapsed = this.data.elapsed + 1
-      this.setData({ elapsed, timerText: this.formatElapsed(elapsed) })
-    }, 1000)
+    this.startTicker()
+  },
+
+  updateElapsed() {
+    const milliseconds = (this.accumulatedMs || 0) + (this.startedAt === null ? 0 : Math.max(0, Date.now() - this.startedAt))
+    const elapsed = Math.floor(milliseconds / 1000)
+    if (elapsed !== this.data.elapsed) this.setData({ elapsed, timerText: this.formatElapsed(elapsed) })
+  },
+
+  clearTicker() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+
+  startTicker() {
+    this.clearTicker()
+    this.updateElapsed()
+    this.timer = setInterval(() => this.updateElapsed(), 1000)
   },
 
   stopTimer() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    this.updateElapsed()
+    if (this.startedAt !== null) this.accumulatedMs = (this.accumulatedMs || 0) + Math.max(0, Date.now() - this.startedAt)
+    this.startedAt = null
+    this.clearTicker()
     if (this.data.running) this.setData({ running: false })
   },
 
@@ -109,7 +133,9 @@ Page({
   },
 
   finishCooking() {
-    storage.markRecipeCooked(this.recipeId)
+    try { storage.markRecipeCooked(this.recipeId) } catch (error) {
+      return wx.showToast({ title: error.message, icon: 'none' })
+    }
     this.stopTimer()
     wx.showToast({ title: '已记录今天做过', icon: 'success' })
   }

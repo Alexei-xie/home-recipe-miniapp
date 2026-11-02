@@ -1,3 +1,6 @@
+const { getRecipeMealRoles } = require('./recipe-roles')
+const { containsIngredient } = require('./ingredient-matching')
+
 function parseMeasurement(value) {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : null
@@ -163,12 +166,7 @@ function getLatestWeight(records) {
 }
 
 function containsAvoidedIngredient(recipe, avoidedIngredients) {
-  const searchable = []
-    .concat(recipe.ingredientKeywords || [])
-    .concat((recipe.ingredients || []).map(item => item.name))
-    .join(' ')
-    .toLowerCase()
-  return (avoidedIngredients || []).some(word => word && searchable.includes(String(word).trim().toLowerCase()))
+  return (avoidedIngredients || []).some(word => containsIngredient(recipe, word))
 }
 
 function getRestrictionReasons(recipe, profile) {
@@ -197,20 +195,20 @@ function buildMealCombination(recipes, categoryKey) {
     !((categoryKey === 'overweight' || categoryKey === 'obese') && recipe.energyLevel === 'high')
   )
 
-  function pick(types, used) {
-    return candidates.find(item => types.includes(item.mealType) && !used.has(item.id)) || null
+  function pick(role, used) {
+    return candidates.find(item => getRecipeMealRoles(item).includes(role) && !used.has(item.id)) || null
   }
 
   const used = new Set()
   const result = []
   const slots = [
-    { label: '主食', types: ['主食', '早餐'] },
-    { label: '蛋白质主菜', types: ['家常热菜'] },
-    { label: '蔬菜', types: ['凉菜', '家常热菜'] },
-    { label: '汤羹/加餐', types: ['汤羹', '小吃甜品', '饮品'] }
+    { label: '主食', role: 'staple' },
+    { label: '蛋白质主菜', role: 'protein' },
+    { label: '蔬菜', role: 'vegetable' },
+    { label: '汤羹/加餐', role: 'soup' }
   ]
   slots.slice(0, RECOMMENDATION_ITEM_LIMIT).forEach(slot => {
-    const item = pick(slot.types, used)
+    const item = pick(slot.role, used)
     if (item) {
       used.add(item.id)
       result.push({ label: slot.label, recipe: item })
@@ -257,10 +255,10 @@ function getMealPeriod(now) {
       title: '早餐时段',
       greeting: '早上好，用一份主食和蛋白质开启今天会更稳。',
       slots: [
-        { label: '早餐主食', types: ['早餐', '主食'] },
-        { label: '优质蛋白', types: ['家常热菜'], preferProtein: true },
-        { label: '饮品 / 加餐', types: ['饮品', '小吃甜品'] },
-        { label: '清爽搭配', types: ['凉菜', '汤羹'] }
+        { label: '早餐主食', role: 'staple' },
+        { label: '优质蛋白', role: 'protein' },
+        { label: '饮品 / 加餐', role: 'snack' },
+        { label: '清爽搭配', role: 'vegetable' }
       ]
     }
   }
@@ -270,10 +268,10 @@ function getMealPeriod(now) {
       title: '午餐时段',
       greeting: '午餐建议搭配主食、蛋白质和蔬菜，吃得饱也吃得均衡。',
       slots: [
-        { label: '主食', types: ['主食', '早餐'] },
-        { label: '蛋白质主菜', types: ['家常热菜'], preferProtein: true },
-        { label: '蔬菜', types: ['凉菜', '家常热菜'] },
-        { label: '汤羹', types: ['汤羹'] }
+        { label: '主食', role: 'staple' },
+        { label: '蛋白质主菜', role: 'protein' },
+        { label: '蔬菜', role: 'vegetable' },
+        { label: '汤羹', role: 'soup' }
       ]
     }
   }
@@ -283,10 +281,10 @@ function getMealPeriod(now) {
       title: '下午加餐时段',
       greeting: '用一份轻巧加餐缓解饥饿感，避免晚餐前太饿。',
       slots: [
-        { label: '轻巧加餐', types: ['小吃甜品', '饮品'] },
-        { label: '均衡补给', types: ['早餐', '主食'] },
-        { label: '优质蛋白', types: ['家常热菜'], preferProtein: true },
-        { label: '清爽搭配', types: ['凉菜', '汤羹'] }
+        { label: '轻巧加餐', role: 'snack' },
+        { label: '均衡补给', role: 'staple' },
+        { label: '优质蛋白', role: 'protein' },
+        { label: '清爽搭配', role: 'vegetable' }
       ]
     }
   }
@@ -296,10 +294,10 @@ function getMealPeriod(now) {
       title: '晚餐时段',
       greeting: '晚餐以适量主食、优质蛋白和蔬菜为主，避免太油太撑。',
       slots: [
-        { label: '主食', types: ['主食', '早餐'] },
-        { label: '蛋白质主菜', types: ['家常热菜'], preferProtein: true },
-        { label: '蔬菜', types: ['凉菜', '家常热菜'] },
-        { label: '清爽汤羹', types: ['汤羹'] }
+        { label: '主食', role: 'staple' },
+        { label: '蛋白质主菜', role: 'protein' },
+        { label: '蔬菜', role: 'vegetable' },
+        { label: '清爽汤羹', role: 'soup' }
       ]
     }
   }
@@ -308,10 +306,10 @@ function getMealPeriod(now) {
     title: '夜间轻食时段',
     greeting: '夜间如确有饥饿感，可选择清淡少量食物，避免高油高糖宵夜。',
     slots: [
-      { label: '清爽选择', types: ['汤羹', '凉菜'] },
-      { label: '少量主食', types: ['早餐', '主食'] },
-      { label: '优质蛋白', types: ['家常热菜'], preferProtein: true },
-      { label: '少量饮品 / 加餐', types: ['饮品', '小吃甜品'] }
+      { label: '清爽选择', role: 'soup' },
+      { label: '少量主食', role: 'staple' },
+      { label: '优质蛋白', role: 'protein' },
+      { label: '少量饮品 / 加餐', role: 'snack' }
     ]
   }
 }
@@ -332,15 +330,6 @@ function localDateKey(date) {
   return `${year}-${month}-${day}`
 }
 
-function isProteinFocusedRecipe(recipe) {
-  const text = [
-    recipe.name,
-    ...(recipe.ingredientKeywords || []),
-    ...(recipe.ingredients || []).map(item => item.name)
-  ].join(' ')
-  return /鸡|牛|猪|羊|鱼|虾|蟹|贝|蛋|豆腐|豆干|豆皮|豆花|肉|排骨|腊|里脊|猪肝|猪蹄|肉丸|肥肠/.test(text)
-}
-
 function buildTimeBasedRecommendation(recipes, profile, latestWeight, now = new Date(), rotation = 0, baseRecommendation = null) {
   const base = baseRecommendation || buildHealthRecommendation(recipes, profile, latestWeight)
   if (!base.category) return Object.assign(base, { period: null, items: [] })
@@ -353,13 +342,7 @@ function buildTimeBasedRecommendation(recipes, profile, latestWeight, now = new 
   const items = []
 
   period.slots.slice(0, RECOMMENDATION_ITEM_LIMIT).forEach((slot, slotIndex) => {
-    const typed = candidates.filter(recipe => slot.types.includes(recipe.mealType) && !used.has(recipe.id))
-    const proteinPreferred = slot.preferProtein ? typed.filter(isProteinFocusedRecipe) : []
-    const pool = proteinPreferred.length
-      ? proteinPreferred
-      : typed.length
-        ? typed
-        : candidates.filter(recipe => !used.has(recipe.id))
+    const pool = candidates.filter(recipe => !used.has(recipe.id) && getRecipeMealRoles(recipe).includes(slot.role))
     if (!pool.length) return
     const ordered = pool.slice().sort((a, b) => {
       const aRank = recommendationSeed(a.id, `${seed}|${slotIndex}`)

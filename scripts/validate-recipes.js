@@ -4,9 +4,9 @@ const {
   CUISINES,
   HEALTH_TAGS,
   DRAW_POOLS,
-  ALLERGENS,
-  getBuiltinRecipe
+  ALLERGENS
 } = require('../data/recipes')
+const { getBuiltinRecipe } = require('../features/data/recipe-details')
 const fs = require('fs')
 const path = require('path')
 const { getBuiltinCartoonCover } = require('../utils/image-service')

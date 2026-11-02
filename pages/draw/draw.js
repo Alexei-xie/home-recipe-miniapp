@@ -167,7 +167,9 @@ Page({
       confirmColor: '#b44335',
       success: result => {
         if (!result.confirm) return
-        storage.clearDrawHistory()
+        try { storage.clearDrawHistory() } catch (error) {
+          return wx.showToast({ title: error.message, icon: 'none' })
+        }
         this.setData({ history: [] })
         wx.showToast({ title: '已清空', icon: 'success' })
       }

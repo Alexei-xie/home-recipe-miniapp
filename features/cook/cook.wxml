@@ -17,6 +17,7 @@
     <view><view class="timer-label">本次计时</view><view class="timer-value">{{timerText}}</view></view>
     <button class="timer-button" bindtap="toggleTimer">{{running ? '暂停' : '开始'}}</button>
   </view>
+  <view class="timer-help">计时按实际时间累计，切到后台不会暂停；不是后台闹钟，关闭页面后结束。</view>
   <view class="cook-actions">
     <button class="btn btn-secondary" disabled="{{stepIndex === 0}}" bindtap="previousStep">上一步</button>
     <button class="btn btn-primary" disabled="{{stepIndex === stepCount - 1}}" bindtap="nextStep">下一步</button>

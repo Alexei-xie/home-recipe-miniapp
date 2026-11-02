@@ -52,3 +52,7 @@
   color: #80593a;
   background: #fff6e8;
 }
+.backup-title { color: #274b35; font-size: 30rpx; font-weight: 700; }
+.backup-actions { display: flex; gap: 16rpx; flex-wrap: wrap; }
+.backup-actions .btn { flex: 1; min-width: 220rpx; margin: 0; }
+.space-warning { color: #a75035; }

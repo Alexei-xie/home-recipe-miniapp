@@ -8,7 +8,15 @@
     <view class="library-icon">♡</view>
   </view>
 
-  <view class="section-title">我的收藏</view>
+  <view class="library-filters card">
+    <input class="form-input" placeholder="搜索收藏和个人菜谱的菜名、食材" value="{{searchQuery}}" bindinput="onSearchInput" />
+    <view class="library-filter-row">
+      <picker range="{{cuisineOptions}}" value="{{cuisineIndex}}" data-field="cuisineIndex" bindchange="chooseCategory"><view>{{cuisineOptions[cuisineIndex]}}⌄</view></picker>
+      <picker range="{{mealTypeOptions}}" value="{{mealTypeIndex}}" data-field="mealTypeIndex" bindchange="chooseCategory"><view>{{mealTypeOptions[mealTypeIndex]}}⌄</view></picker>
+      <text wx:if="{{hasFilters}}" bindtap="clearFilters">重置</text>
+    </view>
+  </view>
+  <view class="section-title">我的收藏 <text class="muted">{{favoriteTotal}}道</text></view>
   <view wx:if="{{favoriteRecipes.length}}" class="recipe-list card">
     <view wx:for="{{favoriteRecipes}}" wx:key="id" class="recipe-row" data-id="{{item.id}}" bindtap="openRecipe">
       <view class="recipe-emoji">{{item.coverEmoji}}</view>
@@ -21,10 +29,11 @@
   </view>
   <view wx:else class="empty card">
     <text class="empty-emoji">☆</text>
-    <view>还没有收藏菜谱</view>
-    <view class="muted">在菜谱详情页点“收藏”即可保存到这里。</view>
+    <view>{{hasFilters ? '没有匹配的收藏' : '还没有收藏菜谱'}}</view>
+    <view class="muted">{{hasFilters ? '试试其他关键词或重置筛选。' : '在菜谱详情页点“收藏”即可保存到这里。'}}</view>
     <button class="btn btn-secondary btn-small library-empty-action" bindtap="goHome">去逛逛菜谱</button>
   </view>
+  <button wx:if="{{favoriteRecipes.length < favoriteTotal}}" class="btn btn-secondary btn-small" bindtap="loadMoreFavorites">查看更多收藏（{{favoriteRecipes.length}} / {{favoriteTotal}}）</button>
 
   <view class="library-section-header">
     <view>
@@ -50,7 +59,8 @@
   </view>
   <view wx:else class="empty card">
     <text class="empty-emoji">📝</text>
-    <view>还没有自己的菜谱</view>
-    <view class="muted">可以新建，或直接修改内置菜谱。</view>
+    <view>{{hasFilters ? '没有匹配的个人菜谱' : '还没有自己的菜谱'}}</view>
+    <view class="muted">{{hasFilters ? '试试其他关键词或重置筛选。' : '可以新建，或直接修改内置菜谱。'}}</view>
   </view>
+  <button wx:if="{{customRecipes.length < customTotal}}" class="btn btn-secondary btn-small" bindtap="loadMoreCustom">查看更多菜谱（{{customRecipes.length}} / {{customTotal}}）</button>
 </view>

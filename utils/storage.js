@@ -1,8 +1,12 @@
-const { BUILTIN_RECIPES, CUISINES, getBuiltinRecipe } = require('../data/recipes')
+const { BUILTIN_RECIPES } = require('../data/recipes')
+const { defaultCatalog, normalizeCatalog, resolveCategory, applyRecipeCategories } = require('./recipe-catalog')
+const { ingredientKeywords } = require('./ingredient-matching')
 
 const STORAGE_KEY = 'today_eat_local_data'
 const COMMUNITY_STORAGE_KEY = 'today_eat_community_recipes'
-const SCHEMA_VERSION = 14
+const CATALOG_STORAGE_KEY = 'today_eat_recipe_catalog'
+const SCHEMA_VERSION = 15
+const COMMUNITY_CACHE_VERSION = 1
 const WRITE_DEBOUNCE_MS = 120
 
 let cachedState = null
@@ -13,8 +17,12 @@ let shouldPersistCommunityOnInit = true
 let cachedRecipeList = null
 let cachedRecipeById = null
 let cachedCookedByDate = null
+let recipeRevision = 0
+let activeCatalog = defaultCatalog()
+let catalogReady = false
 
 function invalidateRecipeCache() {
+  recipeRevision += 1
   cachedRecipeList = null
   cachedRecipeById = null
 }
@@ -83,6 +91,7 @@ function defaultState() {
       noticeSeenAt: 0
     },
     recipeOverrides: {},
+    editorDrafts: {},
     drawHistory: [],
     favorites: [],
     pantryIngredients: [],
@@ -93,8 +102,31 @@ function defaultState() {
 }
 
 function normalizeCuisine(cuisine) {
-  const migrated = cuisine === '粤菜' || cuisine === '泰菜' ? '家常菜' : cuisine
-  return CUISINES.includes(migrated) ? migrated : '家常菜'
+  return resolveCategory(cuisine, 'cuisines', getRecipeCatalog())
+}
+
+function getRecipeCatalog() {
+  if (!catalogReady) {
+    try { activeCatalog = normalizeCatalog(wx.getStorageSync(CATALOG_STORAGE_KEY)) } catch (error) { console.warn('分类缓存读取失败，使用默认分类', error) }
+    catalogReady = true
+  }
+  return activeCatalog
+}
+
+function saveRecipeCatalog(raw) {
+  const catalog = normalizeCatalog(raw)
+  const current = getRecipeCatalog()
+  if (catalog.revision < current.revision || JSON.stringify(catalog) === JSON.stringify(current)) return false
+  try {
+    wx.setStorageSync(CATALOG_STORAGE_KEY, catalog)
+  } catch (error) {
+    const failure = new Error('分类本地缓存保存失败，请清理存储空间后重新同步')
+    failure.code = 'CATALOG_CACHE_WRITE_FAILED'
+    throw failure
+  }
+  activeCatalog = catalog
+  invalidateRecipeCache()
+  return true
 }
 
 function safeRead() {
@@ -104,9 +136,22 @@ function safeRead() {
       shouldPersistCommunityOnInit = true
       return null
     }
-    const communityRecipes = wx.getStorageSync(COMMUNITY_STORAGE_KEY)
-    shouldPersistCommunityOnInit = !Array.isArray(communityRecipes) || Number(data.schemaVersion) !== SCHEMA_VERSION
-    if (Array.isArray(communityRecipes)) data.communityRecipes = communityRecipes
+    let cache
+    try {
+      cache = wx.getStorageSync(COMMUNITY_STORAGE_KEY)
+    } catch (error) {
+      console.warn('社区缓存不可读，下次同步将重新获取', error)
+    }
+    const validRecipe = recipe => recipe && typeof recipe === 'object' && recipe.id && recipe.name &&
+      Array.isArray(recipe.ingredients) && Array.isArray(recipe.steps)
+    const validCache = cache && cache.cacheVersion === COMMUNITY_CACHE_VERSION && Array.isArray(cache.recipes) && cache.recipes.every(validRecipe) &&
+      cache.sync && Number.isFinite(cache.sync.version) && cache.sync.version >= 0
+    shouldPersistCommunityOnInit = !validCache
+    const noticeSeenAt = Number(data.communitySync && data.communitySync.noticeSeenAt) || 0
+    const legacyRecipes = Array.isArray(cache) ? cache : (Array.isArray(data.communityRecipes) ? data.communityRecipes : [])
+    data.communityRecipes = validCache ? cache.recipes : legacyRecipes.filter(validRecipe)
+    // 社区版本只信任与菜谱在同一个 key 中成功落盘的快照。旧缓存先全量校准。
+    data.communitySync = Object.assign({ version: 0, syncedAt: 0, syncProtocol: 0 }, validCache ? cache.sync : {}, { noticeSeenAt })
     return data
   } catch (error) {
     console.error('读取本地数据失败', error)
@@ -115,10 +160,11 @@ function safeRead() {
 }
 
 function normalizeCustomRecipe(recipe) {
+  recipe = recipe && typeof recipe === 'object' ? recipe : {}
   const time = now()
-  ;(recipe.steps || []).forEach((step) => {
-    if (step && step.image) deleteUserFile(step.image)
-  })
+  const categories = applyRecipeCategories(Object.assign({}, recipe, {
+    source: 'custom', mealType: recipe.mealType || recipe.category || '家常热菜'
+  }), getRecipeCatalog())
   const ingredientList = Array.isArray(recipe.ingredients)
     ? recipe.ingredients
     : String(recipe.ingredients || '').split('\n').filter(Boolean).map(line => {
@@ -137,7 +183,8 @@ function normalizeCustomRecipe(recipe) {
     source: 'custom',
     name: recipe.name || '未命名菜谱',
     description: recipe.description || '',
-    mealType: recipe.mealType || recipe.category || '家常热菜',
+    mealType: categories.mealType,
+    canonicalMealType: categories.canonicalMealType || categories.mealType,
     cuisine: normalizeCuisine(recipe.cuisine),
     healthTags: Array.isArray(recipe.healthTags) ? recipe.healthTags : ['常见家常'],
     drawPools: Array.isArray(recipe.drawPools) ? recipe.drawPools : ['家常快手'],
@@ -151,19 +198,27 @@ function normalizeCustomRecipe(recipe) {
     seasonings: Array.isArray(recipe.seasonings) ? recipe.seasonings : [],
     allergens: Array.isArray(recipe.allergens) ? recipe.allergens : [],
     allergensReviewed: Boolean(recipe.allergensReviewed || (Array.isArray(recipe.allergens) && recipe.allergens.length)),
-    ingredientKeywords: Array.isArray(recipe.ingredientKeywords)
-      ? recipe.ingredientKeywords
-      : ingredientList.map(item => item.name),
-    steps: Array.isArray(recipe.steps) ? recipe.steps.map((step, index) => ({
+    ingredientKeywords: ingredientKeywords(Object.assign({}, recipe, { ingredients: ingredientList })),
+    steps: Array.isArray(recipe.steps) ? recipe.steps.filter(Boolean).map((step, index) => ({
       id: step.id || generateId('step'),
       order: index + 1,
-      text: step.text || String(step)
+      text: step.text || String(step),
+      image: step.image || '',
+      // 不保存可能过期的 HTTPS 临时地址，保留可重新解析的云文件路径。
+      imageCloudPaths: Array.isArray(step.imageCloudPaths) ? step.imageCloudPaths.slice() : []
     })) : [],
     tips: Array.isArray(recipe.tips) ? recipe.tips : [],
     coverImage: recipe.coverImage || recipe.mainImage || '',
     coverEmoji: recipe.coverEmoji || '🍽️',
     videoUrl: recipe.videoUrl || '',
     tutorialLinks,
+    referenceName: recipe.referenceName || '',
+    referenceUrl: recipe.referenceUrl || '',
+    referenceRevisionUrl: recipe.referenceRevisionUrl || '',
+    sourceLicense: recipe.sourceLicense || '',
+    sourceLicenseUrl: recipe.sourceLicenseUrl || '',
+    sourceCoverCloudPath: recipe.sourceCoverCloudPath || '',
+    processImageCloudPaths: Array.isArray(recipe.processImageCloudPaths) ? recipe.processImageCloudPaths.slice() : [],
     createdAt: recipe.createdAt || time,
     updatedAt: recipe.updatedAt || time
   }
@@ -218,7 +273,7 @@ function migrateLegacyRecipes(state) {
   return state
 }
 
-function migrateLocalData(rawData) {
+function migrateLocalData(rawData, options = {}) {
   const state = Object.assign(defaultState(), rawData || {})
   const rawProfile = state.profile || {}
   const legacyAdultConfirmed = Boolean(rawProfile.adultConfirmed)
@@ -252,15 +307,22 @@ function migrateLocalData(rawData) {
   state.profile.adultConfirmed = state.profile.populationType === 'adult' &&
     state.profile.adultAgeConfirmed && state.profile.notPregnantConfirmed
   state.weightRecords = Array.isArray(state.weightRecords) ? state.weightRecords : []
+  const drafts = state.editorDrafts && typeof state.editorDrafts === 'object' && !Array.isArray(state.editorDrafts) ? state.editorDrafts : {}
+  state.editorDrafts = {}
+  Object.keys(drafts).filter(key => !['__proto__', 'constructor', 'prototype'].includes(key)).slice(0, 20).forEach(key => {
+    const draft = drafts[key]
+    if (draft && draft.form && typeof draft.form === 'object' && typeof draft.form.name === 'string' && Array.isArray(draft.form.steps)) state.editorDrafts[key] = draft
+  })
   state.customRecipes = Array.isArray(state.customRecipes)
     ? state.customRecipes.map(normalizeCustomRecipe)
     : []
   state.communityRecipes = Array.isArray(state.communityRecipes)
-    ? state.communityRecipes.map(normalizeCommunityRecipe).slice(0, 1000)
+    ? state.communityRecipes.map(normalizeCommunityRecipe)
     : []
   state.communitySync = state.communitySync && typeof state.communitySync === 'object'
     ? {
       version: Math.max(0, Number(state.communitySync.version) || 0),
+      syncProtocol: Math.max(0, Number(state.communitySync.syncProtocol) || 0),
       syncedAt: Math.max(0, Number(state.communitySync.syncedAt) || 0),
       noticeSeenAt: Math.max(0, Number(state.communitySync.noticeSeenAt) || 0)
     }
@@ -307,13 +369,14 @@ function migrateLocalData(rawData) {
   delete state.priceCache
   delete state.priceSnapshots
   state.schemaVersion = SCHEMA_VERSION
-  return migrateLegacyRecipes(state)
+  return options.skipLegacy ? state : migrateLegacyRecipes(state)
 }
 
 function writeStateSync(state) {
   try {
     const personalState = Object.assign({}, state)
     delete personalState.communityRecipes
+    personalState.communitySync = { noticeSeenAt: Number(state.communitySync.noticeSeenAt) || 0 }
     wx.setStorageSync(STORAGE_KEY, personalState)
     hasPendingWrite = false
     return true
@@ -326,7 +389,15 @@ function writeStateSync(state) {
 
 function writeCommunityRecipesSync(state) {
   try {
-    wx.setStorageSync(COMMUNITY_STORAGE_KEY, state.communityRecipes || [])
+    wx.setStorageSync(COMMUNITY_STORAGE_KEY, {
+      cacheVersion: COMMUNITY_CACHE_VERSION,
+      recipes: state.communityRecipes || [],
+      sync: {
+        version: Number(state.communitySync.version) || 0,
+        syncedAt: Number(state.communitySync.syncedAt) || 0,
+        syncProtocol: Number(state.communitySync.syncProtocol) || 0
+      }
+    })
     hasPendingCommunityWrite = false
     return true
   } catch (error) {
@@ -342,6 +413,14 @@ function flushStateSync() {
   const personalSaved = !hasPendingWrite || writeStateSync(cachedState)
   const communitySaved = !hasPendingCommunityWrite || writeCommunityRecipesSync(cachedState)
   return personalSaved && communitySaved
+}
+
+function flushCommunityCache() {
+  return !hasPendingCommunityWrite || writeCommunityRecipesSync(getState())
+}
+
+function getRecipeRevision() {
+  return recipeRevision
 }
 
 function scheduleStateWrite() {
@@ -387,12 +466,29 @@ function updateState(updater) {
   return result
 }
 
+// 显式保存使用候选快照：落盘失败不更换内存状态，也不删除旧图片。
+function commitPersonalChange(updater, options = {}) {
+  const current = getState()
+  const personal = Object.assign({}, current, { communityRecipes: [] })
+  const candidate = JSON.parse(JSON.stringify(personal))
+  candidate.communityRecipes = current.communityRecipes
+  const result = updater(candidate) || candidate
+  result.schemaVersion = SCHEMA_VERSION
+  if (!writeStateSync(result)) throw new Error('本地保存失败，请检查存储空间后重试')
+  cachedState = result
+  // 草稿和资料写入不应使整个菜谱索引失效。菜谱/完成记录API各自失效，
+  // 只有备份恢复、清空等批量替换需要在这里同时清理缓存。
+  if (options.recipesChanged) invalidateRecipeCache()
+  if (options.cookedChanged) invalidateCookedCache()
+  return result
+}
+
 function getProfile() {
   return getState().profile
 }
 
 function saveProfile(patch) {
-  return updateState((state) => {
+  return commitPersonalChange((state) => {
     state.profile = Object.assign({}, state.profile, patch, {
       schemaVersion: SCHEMA_VERSION,
       updatedAt: now()
@@ -408,18 +504,10 @@ function saveAvatarFile(tempPath) {
     const suffix = tempPath.includes('.') ? tempPath.slice(tempPath.lastIndexOf('.')) : '.jpg'
     const destination = `${wx.env.USER_DATA_PATH}/${generateId('avatar')}${suffix}`
     fs.saveFileSync(tempPath, destination)
-    const oldPath = getProfile().avatarPath
-    if (oldPath && oldPath !== destination && oldPath.includes(wx.env.USER_DATA_PATH)) {
-      try {
-        fs.unlinkSync(oldPath)
-      } catch (unlinkError) {
-        console.warn('旧头像清理失败', unlinkError)
-      }
-    }
     return destination
   } catch (error) {
-    console.warn('头像持久化失败，将使用临时路径', error)
-    return tempPath
+    console.warn('头像持久化失败', error)
+    return ''
   }
 }
 
@@ -457,7 +545,7 @@ function getWeightRecords() {
 }
 
 function saveWeightRecord(date, weightKg) {
-  return updateState((state) => {
+  return commitPersonalChange((state) => {
     const index = state.weightRecords.findIndex(item => item.date === date)
     const time = now()
     if (index >= 0) {
@@ -479,36 +567,39 @@ function saveWeightRecord(date, weightKg) {
 }
 
 function deleteWeightRecord(id) {
-  return updateState((state) => {
+  return commitPersonalChange((state) => {
     state.weightRecords = state.weightRecords.filter(item => item.id !== id)
     return state
   }).weightRecords
 }
 
 function getCustomRecipes() {
-  return getState().customRecipes
+  return getState().customRecipes.map(recipe => applyRecipeCategories(recipe, getRecipeCatalog()))
 }
 
-function saveCustomRecipe(recipe) {
+function saveCustomRecipe(recipe, options = {}) {
   const normalized = normalizeCustomRecipe(recipe)
-  updateState((state) => {
+  const draft = options.draftKey ? getEditorDraft(options.draftKey) : null
+  commitPersonalChange((state) => {
     const index = state.customRecipes.findIndex(item => item.id === normalized.id)
     if (index >= 0) state.customRecipes[index] = normalized
     else state.customRecipes.unshift(normalized)
+    if (options.draftKey) delete state.editorDrafts[options.draftKey]
     return state
   })
+  if (draft && draft.form) deleteRecipeFiles({ coverImage: draft.form.coverImage, steps: draft.form.steps })
   invalidateRecipeCache()
   return normalized
 }
 
 function deleteCustomRecipe(id) {
-  const recipes = updateState((state) => {
-    const target = state.customRecipes.find(item => item.id === id)
-    if (target) deleteRecipeFiles(target)
+  const target = getState().customRecipes.find(item => item.id === id)
+  const recipes = commitPersonalChange((state) => {
     state.customRecipes = state.customRecipes.filter(item => item.id !== id)
     state.favorites = state.favorites.filter(item => item.recipeId !== id)
     return state
   }).customRecipes
+  if (target) deleteRecipeFiles(target)
   invalidateRecipeCache()
   return recipes
 }
@@ -525,11 +616,11 @@ function replaceCommunityRecipes(recipes, syncInfo) {
   const normalized = (Array.isArray(recipes) ? recipes : [])
     .map(normalizeCommunityRecipe)
     .filter(recipe => recipe.id && recipe.name && recipe.ingredients.length && recipe.steps.length)
-    .slice(0, 1000)
   const communityRecipes = updateState((state) => {
     state.communityRecipes = normalized
     state.communitySync = {
       version: Math.max(0, Number(syncInfo && syncInfo.version) || 0),
+      syncProtocol: Math.max(0, Number(syncInfo && syncInfo.syncProtocol) || 0),
       syncedAt: Number(syncInfo && syncInfo.syncedAt) || now(),
       noticeSeenAt: Number(state.communitySync.noticeSeenAt) || 0
     }
@@ -555,7 +646,6 @@ function applyCommunityRecipeDelta(recipes, removedIds, syncInfo) {
   })
   const merged = Array.from(byId.values())
     .sort((a, b) => Number(b.publishedAt || b.updatedAt) - Number(a.publishedAt || a.updatedAt))
-    .slice(0, 1000)
   return replaceCommunityRecipes(merged, syncInfo)
 }
 
@@ -570,31 +660,34 @@ function getRecipeOverrides() {
   return getState().recipeOverrides
 }
 
-function saveBuiltinRecipeOverride(recipe) {
+function saveBuiltinRecipeOverride(recipe, options = {}) {
   const builtin = BUILTIN_SUMMARY_BY_ID.get(recipe.id)
   if (!builtin) return null
   const normalized = normalizeBuiltinOverride(recipe, builtin)
-  updateState((state) => {
+  const draft = options.draftKey ? getEditorDraft(options.draftKey) : null
+  commitPersonalChange((state) => {
     state.recipeOverrides[normalized.id] = normalized
+    if (options.draftKey) delete state.editorDrafts[options.draftKey]
     return state
   })
+  if (draft && draft.form) deleteRecipeFiles({ coverImage: draft.form.coverImage, steps: draft.form.steps })
   invalidateRecipeCache()
   return normalized
 }
 
 function clearBuiltinRecipeOverride(id) {
-  const overrides = updateState((state) => {
-    const target = state.recipeOverrides[id]
-    if (target) deleteRecipeFiles(target)
+  const target = getState().recipeOverrides[id]
+  const overrides = commitPersonalChange((state) => {
     delete state.recipeOverrides[id]
     return state
   }).recipeOverrides
+  if (target) deleteRecipeFiles(target)
   invalidateRecipeCache()
   return overrides
 }
 
 function deleteUserFile(filePath) {
-  if (!filePath || !filePath.includes(wx.env.USER_DATA_PATH)) return
+  if (!isUserFile(filePath)) return
   try {
     wx.getFileSystemManager().unlinkSync(filePath)
   } catch (error) {
@@ -603,7 +696,63 @@ function deleteUserFile(filePath) {
 }
 
 function deleteRecipeFiles(recipe) {
-  deleteUserFile(recipe.coverImage)
+  getRecipeFilePaths(recipe).forEach(file => {
+    if (!getReferencedUserFiles().has(file)) deleteUserFile(file)
+  })
+}
+
+function isUserFile(filePath) {
+  return typeof filePath === 'string' && filePath.startsWith(wx.env.USER_DATA_PATH + '/') &&
+    !filePath.split('/').includes('..')
+}
+
+function getRecipeFilePaths(recipe) {
+  return [recipe && recipe.coverImage].concat((Array.isArray(recipe && recipe.steps) ? recipe.steps : []).filter(Boolean).map(step => step.image)).filter(isUserFile)
+}
+
+function getReferencedUserFiles() {
+  const state = getState()
+  const recipes = state.customRecipes.concat(Object.values(state.recipeOverrides),
+    Object.values(state.editorDrafts || {}).map(draft => ({ coverImage: draft.form && draft.form.coverImage, steps: draft.form && draft.form.steps })))
+  return new Set(recipes.reduce((paths, recipe) => paths.concat(getRecipeFilePaths(recipe)), [state.profile.avatarPath]).filter(isUserFile))
+}
+
+function deleteUnreferencedUserFile(filePath) {
+  if (!getReferencedUserFiles().has(filePath)) deleteUserFile(filePath)
+}
+
+function getEditorDraft(key) {
+  return getState().editorDrafts[key] || null
+}
+
+function saveEditorDraft(key, draft) {
+  const previous = getEditorDraft(key)
+  commitPersonalChange(state => {
+    state.editorDrafts[key] = Object.assign({}, draft, { updatedAt: now() })
+    // 草稿最多保留最近20份。剔除引用不立即删文件，交由空间管理确认清理。
+    const entries = Object.entries(state.editorDrafts).sort((a, b) => b[1].updatedAt - a[1].updatedAt).slice(0, 20)
+    state.editorDrafts = entries.reduce((result, [id, value]) => { result[id] = value; return result }, {})
+    return state
+  })
+  if (previous && previous.form) deleteRecipeFiles({ coverImage: previous.form.coverImage, steps: previous.form.steps })
+}
+
+function clearEditorDraft(key) {
+  if (!getEditorDraft(key)) return
+  const previous = getEditorDraft(key)
+  commitPersonalChange(state => { delete state.editorDrafts[key]; return state })
+  if (previous.form) deleteRecipeFiles({ coverImage: previous.form.coverImage, steps: previous.form.steps })
+}
+
+function saveHealthRecord(patch, date, weightKg) {
+  return commitPersonalChange(state => {
+    state.profile = Object.assign({}, state.profile, patch, { updatedAt: now(), schemaVersion: SCHEMA_VERSION })
+    const previous = state.weightRecords.find(item => item.date === date)
+    state.weightRecords = state.weightRecords.filter(item => item.date !== date)
+    state.weightRecords.push({ id: previous ? previous.id : generateId('weight'), date, weightKg,
+      createdAt: previous ? previous.createdAt : now(), updatedAt: now() })
+    return state
+  })
 }
 
 function getAllRecipes() {
@@ -619,15 +768,15 @@ function getAllRecipes() {
     }) : recipe
   })
   cachedRecipeList = builtins.concat(state.communityRecipes, state.customRecipes)
+    .map(recipe => applyRecipeCategories(recipe, getRecipeCatalog()))
   cachedRecipeById = new Map(cachedRecipeList.map(recipe => [recipe.id, recipe]))
   return cachedRecipeList
 }
 
 function getRecipe(id) {
   if (!cachedRecipeById) getAllRecipes()
-  const recipe = cachedRecipeById.get(id) || null
-  if (!recipe || recipe.source !== 'builtin' || recipe.isLocalOverride) return recipe
-  return getBuiltinRecipe(id) || recipe
+  // 主包只查摘要。详情、编辑和烹饪页使用 features/utils/recipe-details 获取完整内容。
+  return cachedRecipeById.get(id) || null
 }
 
 function getFavorites() {
@@ -821,7 +970,7 @@ function clearCheckedShoppingItems() {
 }
 
 function markRecipeCooked(recipeId, date = getDateKey()) {
-  const history = updateState(state => {
+  const history = commitPersonalChange(state => {
     const index = state.cookedHistory.findIndex(item => item.recipeId === recipeId && item.date === date)
     if (index >= 0) state.cookedHistory.splice(index, 1)
     else state.cookedHistory.unshift({ recipeId, date, createdAt: now() })
@@ -847,7 +996,7 @@ function isRecipeCookedToday(recipeId) {
 }
 
 function clearHealthData() {
-  updateState((state) => {
+  commitPersonalChange((state) => {
     state.weightRecords = []
     state.profile.heightCm = null
     state.profile.adultConfirmed = false
@@ -867,35 +1016,40 @@ function clearHealthData() {
 }
 
 function clearDrawHistory() {
-  updateState((state) => {
+  commitPersonalChange((state) => {
     state.drawHistory = []
     return state
   })
 }
 
 function clearAllPersonalData() {
-  const state = getState()
-  try {
-    if (pendingWriteTimer) clearTimeout(pendingWriteTimer)
-    pendingWriteTimer = null
-    hasPendingWrite = false
-    hasPendingCommunityWrite = false
-    deleteUserFile(state.profile.avatarPath)
-    state.customRecipes.forEach(deleteRecipeFiles)
-    Object.keys(state.recipeOverrides || {}).forEach(id => deleteRecipeFiles(state.recipeOverrides[id]))
-    wx.removeStorageSync(STORAGE_KEY)
-    wx.removeStorageSync(COMMUNITY_STORAGE_KEY)
-    wx.removeStorageSync('recipes')
-    cachedState = null
-    invalidateRecipeCache()
-    invalidateCookedCache()
-  } catch (error) {
-    console.error('清除数据失败', error)
+  const files = getReferencedUserFiles()
+  files.add(`${wx.env.USER_DATA_PATH}/recipe_backups/今日食签-个人备份.json`)
+  const fs = wx.getFileSystemManager()
+  if (fs.readdirSync) {
+    // 用户确认“清除全部”时也处理遗留孤立图片，仅匹配本应用生成的文件名。
+    for (const [directory, pattern] of [[`${wx.env.USER_DATA_PATH}/recipe_images`, /^recipe_[a-z0-9_]+\.(jpg|jpeg|png|webp)$/],
+      [wx.env.USER_DATA_PATH, /^avatar_[a-z0-9_]+\.(jpg|jpeg|png|webp)$/]]) {
+      try { fs.readdirSync(directory).filter(name => pattern.test(name)).forEach(name => files.add(`${directory}/${name}`)) } catch (error) {
+        console.warn('读取本地图片清理清单失败或目录尚未创建', error)
+      }
+    }
   }
-  return initStorage()
+  wx.removeStorageSync('recipes')
+  const result = commitPersonalChange(() => defaultState(), { recipesChanged: true, cookedChanged: true })
+  if (pendingWriteTimer) clearTimeout(pendingWriteTimer)
+  pendingWriteTimer = null
+  hasPendingCommunityWrite = !writeCommunityRecipesSync(result)
+  files.forEach(deleteUserFile)
+  return result
 }
 
 module.exports = {
+  getRecipeCatalog,
+  saveRecipeCatalog,
+  CATALOG_STORAGE_KEY,
+  flushCommunityCache,
+  getRecipeRevision,
   STORAGE_KEY,
   COMMUNITY_STORAGE_KEY,
   SCHEMA_VERSION,
@@ -908,6 +1062,14 @@ module.exports = {
   saveAvatarFile,
   saveRecipeImageFile,
   deleteUserFile,
+  deleteUnreferencedUserFile,
+  commitPersonalChange,
+  isUserFile,
+  getReferencedUserFiles,
+  getEditorDraft,
+  saveEditorDraft,
+  clearEditorDraft,
+  saveHealthRecord,
   markIntroSeen,
   getWeightRecords,
   saveWeightRecord,

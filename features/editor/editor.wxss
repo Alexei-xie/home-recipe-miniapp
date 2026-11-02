@@ -189,3 +189,6 @@
   line-height: 1.5;
   text-align: center;
 }
+.draft-bar { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; margin: 18rpx 0; padding: 20rpx 24rpx; background: #e9f1e9; border-radius: 18rpx; color: #4e6658; font-size: 23rpx; line-height: 1.6; }
+.draft-bar text:first-child { flex: 1; min-width: 0; }
+.draft-discard { flex-shrink: 0; color: #a5513f; padding: 12rpx 0; }

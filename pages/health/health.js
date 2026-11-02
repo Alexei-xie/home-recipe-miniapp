@@ -195,14 +195,15 @@ Page({
     }
     const roundedHeight = Math.round(heightCm * 10) / 10
     const roundedWeight = Math.round(weightKg * 10) / 10
-    storage.saveProfile({
+    try { storage.saveHealthRecord({
       heightCm: roundedHeight,
       adultAgeConfirmed: type === 'adult' && this.data.adultConfirmedDraft,
       notPregnantConfirmed: type === 'adult' && this.data.notPregnantDraft,
       adultConfirmed: adultEligible,
       healthRecommendationEnabled: true
-    })
-    storage.saveWeightRecord(this.data.recordDate, roundedWeight)
+    }, this.data.recordDate, roundedWeight) } catch (error) {
+      return this.showRecordError(error.message)
+    }
     this.setData({ formError: '' })
     wx.showToast({
       title: type === 'adult' && !adultEligible ? '已保存，未启用成人分级' : '记录已保存',
@@ -219,7 +220,7 @@ Page({
       content: '删除后将使用下一条最新记录重新计算 BMI。',
       success: result => {
         if (result.confirm) {
-          storage.deleteWeightRecord(id)
+          try { storage.deleteWeightRecord(id) } catch (error) { return this.showRecordError(error.message) }
           this.loadHealthData()
         }
       }

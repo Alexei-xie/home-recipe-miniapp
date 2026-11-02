@@ -192,6 +192,9 @@
     <view wx:if="{{recipe.referenceName}}" class="content-reference" bindtap="copyRecipeReference">
       内容来源：{{recipe.referenceName}}{{recipe.referenceUrl ? '（点按复制参考链接）' : ''}}
     </view>
+    <view wx:if="{{recipe.sourceLicenseUrl}}" class="content-reference" bindtap="copyRecipeLicense">
+      本文为中文改编，按 {{recipe.sourceLicense}} 提供（点按复制许可链接）
+    </view>
 
     <view wx:if="{{recipe.videoUrl}}" class="section-title">教学视频</view>
     <video

@@ -1,0 +1,79 @@
+<view class="page category-page">
+  <view class="category-intro card">
+    <text class="intro-kicker">ADMIN · CATEGORIES</text>
+    <view class="intro-title">整理每一道好菜</view>
+    <view class="intro-copy">管理菜系、餐食分类和公共菜谱归类，用户下拉首页即可同步。</view>
+  </view>
+  <view wx:if="{{loading}}" class="state-card card">正在加载分类…</view>
+  <view wx:elif="{{errorText}}" class="state-card error card">{{errorText}}</view>
+  <block wx:elif="{{isAdmin}}">
+    <view class="category-tabs">
+      <view class="category-tab {{activeTab === 'cuisines' ? 'active' : ''}}" data-tab="cuisines" bindtap="chooseTab">菜系</view>
+      <view class="category-tab {{activeTab === 'mealTypes' ? 'active' : ''}}" data-tab="mealTypes" bindtap="chooseTab">餐食分类</view>
+      <view class="category-tab {{activeTab === 'recipes' ? 'active' : ''}}" data-tab="recipes" bindtap="chooseTab">菜谱归类</view>
+    </view>
+    <block wx:if="{{activeTab !== 'recipes'}}">
+      <view class="category-help">排序决定首页展示顺序，合并或删除分类均保留菜谱。</view>
+      <view class="category-list">
+        <view wx:for="{{categoryRows}}" wx:key="name" class="category-row card">
+          <view class="category-row-header">
+            <view class="category-identity">
+              <text class="category-order">{{index + 1}}</text>
+              <text class="category-name">{{item.name}}</text>
+            </view>
+            <text class="category-count">{{item.count}} 道菜谱</text>
+          </view>
+          <view class="category-row-actions">
+            <view class="category-action-group">
+              <button class="category-action order-button" hover-class="category-action-pressed" disabled="{{busy || index === 0}}" data-name="{{item.name}}" data-direction="-1" bindtap="moveCategory"><text class="order-icon">↑</text><text>上移</text></button>
+              <button class="category-action order-button" hover-class="category-action-pressed" disabled="{{busy || index === categoryRows.length - 1}}" data-name="{{item.name}}" data-direction="1" bindtap="moveCategory"><text class="order-icon">↓</text><text>下移</text></button>
+            </view>
+            <view class="category-action-group">
+              <button class="category-action edit-button" hover-class="category-action-pressed" disabled="{{busy}}" data-name="{{item.name}}" bindtap="renameCategory">改名</button>
+              <button class="category-action merge-button" hover-class="category-action-pressed" disabled="{{busy || categoryRows.length < 2}}" data-name="{{item.name}}" bindtap="openMerge">合并</button>
+              <button class="category-action delete-button" hover-class="category-action-pressed" disabled="{{busy || categoryRows.length < 2}}" data-name="{{item.name}}" bindtap="openDelete">删除</button>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="add-category card">
+        <view class="add-category-title">新增{{activeTab === 'cuisines' ? '菜系' : '餐食分类'}}</view>
+        <view class="add-category-input-row">
+          <input placeholder="输入分类名称" maxlength="12" value="{{newName}}" bindinput="onNewNameInput" disabled="{{busy}}" />
+          <button class="add-category-button" hover-class="category-action-pressed" disabled="{{busy}}" bindtap="addCategory">＋ 添加</button>
+        </view>
+        <view class="add-category-hint">最多 12 个字，添加后可继续调整顺序。</view>
+      </view>
+    </block>
+    <block wx:else>
+      <view class="recipe-search card"><input placeholder="搜索菜名" value="{{searchQuery}}" bindinput="onSearchInput" /></view>
+      <view class="recipe-filters">
+        <picker range="{{cuisineFilterOptions}}" bindchange="filterCuisine"><view class="filter-value">{{filterCuisine || '全部菜系'}}⌄</view></picker>
+        <picker range="{{mealFilterOptions}}" bindchange="filterMealType"><view class="filter-value">{{filterMealType || '全部餐食'}}⌄</view></picker>
+        <text class="result-count">{{recipeTotal}} 道</text>
+      </view>
+      <view class="category-help">仅管理内置与公共菜谱，不覆盖用户自己创建的私有菜谱。</view>
+      <view wx:for="{{recipes}}" wx:key="id" class="recipe-category-card card">
+        <view class="recipe-heading"><view class="recipe-name">{{item.name}}</view><text class="source-tag">{{item.sourceLabel}}</text></view>
+        <view class="recipe-selectors">
+          <view class="category-select"><text>菜系</text><picker range="{{cuisines}}" value="{{item.cuisineIndex}}" data-index="{{index}}" data-field="cuisine" bindchange="changeRecipeCategory" disabled="{{busy}}"><view class="select-value"><text class="select-label">{{item.cuisine}}</text><text>⌄</text></view></picker></view>
+          <view class="category-select"><text>餐食分类</text><picker range="{{mealTypes}}" value="{{item.mealTypeIndex}}" data-index="{{index}}" data-field="mealType" bindchange="changeRecipeCategory" disabled="{{busy}}"><view class="select-value"><text class="select-label">{{item.mealType}}</text><text>⌄</text></view></picker></view>
+        </view>
+        <button wx:if="{{item.dirty}}" class="btn btn-primary btn-small save-category" disabled="{{busy}}" data-index="{{index}}" bindtap="saveRecipeCategory">保存归类</button>
+      </view>
+      <view wx:if="{{!recipeTotal}}" class="state-card card">没有找到匹配的公共菜谱。</view>
+      <button wx:if="{{recipes.length < recipeTotal}}" class="btn btn-secondary btn-small more-button" bindtap="loadMore">继续加载（{{recipes.length}} / {{recipeTotal}}）</button>
+    </block>
+    <view class="revision-note">分类版本 {{revision}}<text wx:if="{{busy}}"> · 正在保存…</text></view>
+  </block>
+</view>
+
+<view wx:if="{{mergeVisible}}" class="modal-mask" bindtap="closeMerge">
+  <view class="modal-box" catchtap="stopTap">
+    <view class="merge-title">{{mergeOperation === 'delete' ? '删除' : '合并'}}「{{mergeName}}」</view>
+    <view wx:if="{{mergeOperation === 'delete'}}" class="merge-copy">此分类下有 {{mergeRecipeCount}} 道公共菜谱。请选择接收分类，删除后会自动转移，菜谱内容不会被删除。</view>
+    <view wx:else class="merge-copy">原分类将被移除，其中的菜谱会转入你选择的分类。</view>
+    <picker range="{{mergePickerOptions}}" value="{{mergeOperation === 'delete' ? mergeTargetIndex + 1 : mergeTargetIndex}}" bindchange="chooseMergeTarget" disabled="{{busy}}"><view class="picker-field">{{mergeTargetIndex < 0 ? '请选择接收分类' : (mergeOperation === 'delete' ? '转移到：' : '合并到：') + mergeOptions[mergeTargetIndex]}}　⌄</view></picker>
+    <view class="merge-actions"><button class="btn btn-secondary" disabled="{{busy}}" bindtap="closeMerge">取消</button><button class="btn {{mergeOperation === 'delete' ? 'btn-danger' : 'btn-primary'}}" disabled="{{busy || mergeTargetIndex < 0}}" bindtap="confirmMerge">{{mergeOperation === 'delete' ? '确认删除' : '确认合并'}}</button></view>
+  </view>
+</view>

@@ -55,8 +55,16 @@ Page({
   },
 
   onChooseAvatar(event) {
+    const previous = storage.getProfile().avatarPath
     const savedPath = storage.saveAvatarFile(event.detail.avatarUrl)
-    storage.saveProfile({ avatarPath: savedPath })
+    if (!savedPath) return wx.showToast({ title: '头像保存失败，请检查空间', icon: 'none' })
+    try {
+      storage.commitPersonalChange(state => { state.profile.avatarPath = savedPath; return state })
+    } catch (error) {
+      storage.deleteUnreferencedUserFile(savedPath)
+      return wx.showToast({ title: error.message, icon: 'none' })
+    }
+    storage.deleteUnreferencedUserFile(previous)
     this.loadProfile()
   },
 
@@ -75,7 +83,12 @@ Page({
 
   persistNickname(value, showToast) {
     const nickname = String(value || '').trim().slice(0, 24)
-    const profile = storage.saveProfile({ nickname })
+    let profile
+    try {
+      profile = storage.commitPersonalChange(state => {
+        state.profile = Object.assign({}, state.profile, { nickname, updatedAt: Date.now() }); return state
+      }).profile
+    } catch (error) { return wx.showToast({ title: error.message, icon: 'none' }) }
     this.setData({ nicknameInput: nickname, profile })
     if (showToast) {
       wx.showToast({ title: '资料已保存', icon: 'success' })
@@ -100,7 +113,10 @@ Page({
     const index = selected.indexOf(value)
     if (index >= 0) selected.splice(index, 1)
     else selected.push(value)
-    const profile = storage.saveProfile({ allergies: selected })
+    let profile
+    try { profile = storage.commitPersonalChange(state => {
+      state.profile.allergies = selected; state.profile.updatedAt = Date.now(); return state
+    }).profile } catch (error) { return wx.showToast({ title: error.message, icon: 'none' }) }
     this.setData({
       profile,
       allergenOptions: ALLERGENS.map(name => ({ name, selected: selected.includes(name) }))
@@ -117,13 +133,19 @@ Page({
       .map(item => item.trim())
       .filter(Boolean)
       .slice(0, 20)
-    const profile = storage.saveProfile({ avoidedIngredients: words })
+    let profile
+    try { profile = storage.commitPersonalChange(state => {
+      state.profile.avoidedIngredients = words; state.profile.updatedAt = Date.now(); return state
+    }).profile } catch (error) { return wx.showToast({ title: error.message, icon: 'none' }) }
     this.setData({ profile, avoidedInput: words.join('、') })
     wx.showToast({ title: '忌口已保存', icon: 'success' })
   },
 
   toggleHealthRecommendation(event) {
-    const profile = storage.saveProfile({ healthRecommendationEnabled: event.detail.value })
+    let profile
+    try { profile = storage.commitPersonalChange(state => {
+      state.profile.healthRecommendationEnabled = event.detail.value; state.profile.updatedAt = Date.now(); return state
+    }).profile } catch (error) { return wx.showToast({ title: error.message, icon: 'none' }) }
     this.setData({ profile })
   },
 
@@ -139,6 +161,10 @@ Page({
     wx.navigateTo({ url: '/features/notifications/notifications' })
   },
 
+  openCategories() {
+    wx.navigateTo({ url: '/features/categories/categories' })
+  },
+
   clearHealth() {
     wx.showModal({
       title: '清除健康记录？',
@@ -146,7 +172,9 @@ Page({
       confirmColor: '#b44335',
       success: result => {
         if (result.confirm) {
-          storage.clearHealthData()
+          try { storage.clearHealthData() } catch (error) {
+            return wx.showToast({ title: error.message, icon: 'none' })
+          }
           this.loadProfile()
           wx.showToast({ title: '健康记录已清除', icon: 'success' })
         }
@@ -161,7 +189,9 @@ Page({
       confirmColor: '#b44335',
       success: result => {
         if (result.confirm) {
-          storage.clearDrawHistory()
+          try { storage.clearDrawHistory() } catch (error) {
+            return wx.showToast({ title: error.message, icon: 'none' })
+          }
           wx.showToast({ title: '抽取历史已清除', icon: 'success' })
         }
       }
@@ -176,7 +206,9 @@ Page({
       confirmColor: '#b44335',
       success: result => {
         if (result.confirm) {
-          storage.clearAllPersonalData()
+          try { storage.clearAllPersonalData() } catch (error) {
+            return wx.showToast({ title: '清除未完成，请检查本地存储', icon: 'none' })
+          }
           wx.reLaunch({ url: '/pages/index/index' })
         }
       }

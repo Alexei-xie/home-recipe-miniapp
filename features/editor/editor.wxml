@@ -7,6 +7,10 @@
     </view>
   </view>
 
+  <view wx:if="{{draftStatus}}" class="draft-bar">
+    <text>{{draftStatus}}</text><text class="draft-discard" bindtap="discardDraft">放弃编辑</text>
+  </view>
+
   <view class="section-title">菜谱封面</view>
   <view class="cover-editor card">
     <image
@@ -21,7 +25,7 @@
       <button class="btn btn-secondary btn-small" bindtap="chooseCoverImage">{{form.coverImage ? '替换图片' : '上传图片'}}</button>
       <button wx:if="{{form.coverImage}}" class="btn btn-danger btn-small" bindtap="removeCoverImage">移除图片</button>
     </view>
-    <view class="cover-help">支持从相册或相机选择，建议小于 4MB。仅本地保存时图片不会上传；主动投稿审核时所选封面会随菜谱上传云端。</view>
+    <view class="cover-help">{{preparingImage ? '正在优化图片尺寸…' : '图片会缩小后保存在本机。只有主动投稿审核时，封面才会上传云端。'}}</view>
   </view>
 
   <view class="section-title">基本信息</view>

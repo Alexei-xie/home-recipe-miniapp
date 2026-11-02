@@ -2,6 +2,7 @@
 // 每道菜保留来源页面与授权或使用声明，详情页可查看原始出处。
 
 const CREATED_AT = 1785926400000
+const WEB_RECIPES_NOVEMBER = require('./web-recipes-202611')
 
 function recipe(config) {
   return {
@@ -46,10 +47,12 @@ function recipe(config) {
     imageQuery: config.name,
     referenceName: config.referenceName || 'Wikibooks Cookbook（CC BY-SA 4.0）',
     referenceUrl: config.referenceUrl,
+    referenceRevisionUrl: config.referenceRevisionUrl || '',
     sourceLicense: config.sourceLicense || 'CC BY-SA 4.0',
+    sourceLicenseUrl: config.sourceLicenseUrl || '',
     methodVerified: true,
-    createdAt: CREATED_AT,
-    updatedAt: CREATED_AT
+    createdAt: config.createdAt || CREATED_AT,
+    updatedAt: config.createdAt || CREATED_AT
   }
 }
 
@@ -599,5 +602,6 @@ module.exports = [
     referenceName: 'Open Recipe（来源声明可分享和修改）',
     referenceUrl: 'https://uraplutonium.github.io/open-recipe/2018-09-29-carrot-and-pear-soup/',
     sourceLicense: 'Open Recipe 可分享与修改声明'
-  })
+  }),
+  ...WEB_RECIPES_NOVEMBER.map(recipe)
 ]

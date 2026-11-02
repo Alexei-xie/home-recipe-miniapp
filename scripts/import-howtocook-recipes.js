@@ -4,10 +4,10 @@ const path = require('path')
 const projectRoot = path.resolve(__dirname, '..')
 const sourceRoot = path.resolve(process.argv[2] || '/private/tmp/howtocook-source')
 const dishesRoot = path.join(sourceRoot, 'dishes')
-const outputPath = path.join(projectRoot, 'data', 'verified-recipes.js')
+const outputPath = path.join(projectRoot, 'features', 'data', 'verified-recipes.js')
 const imageManifestPath = path.join(projectRoot, 'scripts', 'step-image-manifest.json')
 const coverManifestPath = path.join(projectRoot, 'scripts', 'source-cover-manifest.json')
-const existingRecipes = require('../data/verified-recipes')
+const existingRecipes = require('../features/data/verified-recipes')
 const legacyRecipes = existingRecipes.map(item => Array.isArray(item)
   ? { id: item[0], name: item[1], cuisine: item[4] }
   : item)
@@ -458,7 +458,7 @@ recipes.forEach(recipe => {
   delete recipe.sourceCoverSource
 })
 
-// 发布包采用紧凑数组，公共字段和说明在 data/recipes.js 中恢复，避免重复键名使主包膨胀。
+// 完整步骤留在 features 分包；主包索引由 build-recipe-index.js 生成。
 const compactRecipes = recipes.map(recipe => [
   recipe.id,
   recipe.name,
@@ -487,3 +487,4 @@ fs.writeFileSync(coverManifestPath, `${JSON.stringify(sourceCoverManifest, null,
 console.log(`已生成 ${recipes.length} 道有来源菜谱：${outputPath}`)
 console.log(`已生成 ${stepImageManifest.length} 张步骤图清单：${imageManifestPath}`)
 console.log(`已生成 ${sourceCoverManifest.length} 张来源成品封面清单：${coverManifestPath}`)
+require('child_process').execFileSync(process.execPath, [path.join(__dirname, 'build-recipe-index.js')], { stdio: 'inherit' })

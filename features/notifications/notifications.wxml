@@ -12,6 +12,7 @@
 
   <block wx:if="{{!loading && !errorText}}">
     <block wx:if="{{isAdmin}}">
+      <button class="btn btn-secondary" bindtap="openCategories">管理菜系与餐食分类　›</button>
       <view class="section-title">待审核投稿（{{pendingCount}}）</view>
       <view wx:if="{{!reviewQueue.length}}" class="empty-card card">当前没有待审核菜谱。</view>
       <view wx:for="{{reviewQueue}}" wx:key="id" class="review-card card">

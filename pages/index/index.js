@@ -3,6 +3,9 @@ const health = require('../../utils/health')
 const imageService = require('../../utils/image-service')
 const community = require('../../utils/community')
 const share = require('../../utils/share')
+const { toRecipeCard } = require('../../utils/recipe-card')
+const { resolveCategory } = require('../../utils/recipe-catalog')
+const { normalizeIngredient } = require('../../utils/ingredient-matching')
 const { MEAL_TYPES, CUISINES } = require('../../data/recipes')
 
 function getRecipeCoverImage(recipe) {
@@ -10,14 +13,14 @@ function getRecipeCoverImage(recipe) {
 }
 
 function getRecipeSearchText(recipe) {
-  return [
+  return normalizeIngredient([
     recipe.name,
     recipe.description,
     recipe.mealType,
     recipe.cuisine,
     ...(recipe.healthTags || []),
     ...(recipe.ingredientKeywords || [])
-  ].filter(Boolean).join(' ').toLowerCase()
+  ].filter(Boolean).join(' '))
 }
 
 Page({
@@ -54,7 +57,44 @@ Page({
     share.enableShareMenu()
     // 首屏只渲染 16 张卡片，滚动到底再增量加载，降低千级菜谱的首屏布局与图片请求压力。
     this.pageSize = 16
+    this.refreshPlanCounts()
+    if (this.recipeIndex && this.homeDependencyKey === this.getHomeDependencyKey()) {
+      if (this.filtersDirty) this.applyFilters()
+      else this.refreshVisibleCovers()
+      return
+    }
     this.loadPage()
+  },
+
+  getHomeDependencyKey() {
+    const state = storage.getState()
+    const now = new Date()
+    return JSON.stringify([
+      storage.getRecipeRevision(), state.profile, state.weightRecords,
+      state.pantryIngredients, storage.getDateKey(now), health.getMealPeriod(now).key
+    ])
+  },
+
+  refreshPlanCounts() {
+    const counts = {
+      todayPlanCount: storage.getMealPlan().length,
+      shoppingListCount: storage.getShoppingList().filter(item => !item.checked).length
+    }
+    if (counts.todayPlanCount !== this.data.todayPlanCount || counts.shoppingListCount !== this.data.shoppingListCount) this.setData(counts)
+  },
+
+  refreshVisibleCovers() {
+    const recipes = (this.filteredRecipes || []).slice(0, this.renderedRecipeCount || 0)
+    const token = this.renderToken
+    imageService.hydrateRecipeCovers(recipes, null, recipes.length).then(hydrated => {
+      if (token !== this.renderToken) return
+      const patch = {}
+      hydrated.forEach((recipe, index) => {
+        const current = this.data.visibleRecipes[index]
+        if (current && current.id === recipe.id && current.coverImage !== recipe.coverImage) patch[`visibleRecipes[${index}].coverImage`] = recipe.coverImage
+      })
+      if (Object.keys(patch).length) this.setData(patch)
+    })
   },
 
   onReachBottom() {
@@ -68,7 +108,7 @@ Page({
     community.syncPublicRecipes().then(result => {
       this.loadPage()
       wx.showToast({
-        title: result.unchanged ? '已是最新菜谱' : `已同步 ${result.count} 道公共菜谱`,
+        title: result.catalogChanged ? '菜谱分类已更新' : result.unchanged ? '已是最新菜谱' : `已同步 ${result.count} 道公共菜谱`,
         icon: 'none'
       })
     }).catch(error => {
@@ -86,6 +126,8 @@ Page({
 
   onUnload() {
     this.clearSearchTimer()
+    this.renderToken = (this.renderToken || 0) + 1
+    this.loadToken = (this.loadToken || 0) + 1
   },
 
   onShareAppMessage() {
@@ -97,10 +139,12 @@ Page({
   },
 
   loadPage() {
+    this.homeDependencyKey = this.getHomeDependencyKey()
     this.imageRetryCounts = Object.create(null)
     const loadToken = (this.loadToken || 0) + 1
     this.loadToken = loadToken
     const state = storage.getState()
+    const catalog = storage.getRecipeCatalog()
     const allRecipes = storage.getAllRecipes()
     const safeRecipes = health.filterRecipesByDietaryRestrictions(allRecipes, state.profile)
     const latestWeight = health.getLatestWeight(state.weightRecords)
@@ -139,6 +183,10 @@ Page({
       })
     }))
     this.setData({
+      mealTypes: catalog.mealTypes,
+      cuisines: catalog.cuisines,
+      activeMealType: this.data.activeMealType ? resolveCategory(this.data.activeMealType, 'mealTypes', catalog) : '',
+      activeCuisine: this.data.activeCuisine ? resolveCategory(this.data.activeCuisine, 'cuisines', catalog) : '',
       introVisible: !state.introSeen,
       pantryIngredients: storage.getPantryIngredients(),
       todayPlanCount: storage.getMealPlan().length,
@@ -173,7 +221,8 @@ Page({
   },
 
   applyFilters() {
-    const query = this.data.searchQuery.trim().toLowerCase()
+    this.filtersDirty = false
+    const query = normalizeIngredient(this.data.searchQuery)
     let list = this.recipeIndex || []
     if (this.data.activeMealType) {
       list = list.filter(item => item.recipe.mealType === this.data.activeMealType)
@@ -186,7 +235,7 @@ Page({
     }
     const pantryIngredients = this.data.pantryIngredients || []
     if (pantryIngredients.length) {
-      list = list.filter(item => pantryIngredients.every(ingredient => item.searchText.includes(ingredient.toLowerCase())))
+      list = list.filter(item => pantryIngredients.every(ingredient => item.searchText.includes(normalizeIngredient(ingredient))))
     }
     list = this.sortRecipes(list.map(item => item.recipe))
     this.filteredRecipes = list
@@ -208,20 +257,7 @@ Page({
   },
 
   toRecipeCard(recipe) {
-    const coverImage = getRecipeCoverImage(recipe)
-    const sourceLabel = recipe.source === 'custom'
-      ? '我的菜谱'
-      : (recipe.source === 'community' ? '社区菜谱' : '')
-    return {
-      id: recipe.id,
-      name: recipe.name,
-      mealType: recipe.mealType,
-      cuisine: recipe.cuisine || '家常菜',
-      durationMinutes: recipe.durationMinutes,
-      coverEmoji: recipe.coverEmoji || '🍽️',
-      coverImage,
-      sourceLabel
-    }
+    return toRecipeCard(recipe)
   },
 
   renderNextPage() {
@@ -233,11 +269,9 @@ Page({
     const nextCards = nextRecipes.map(recipe => this.toRecipeCard(recipe))
     const renderToken = this.renderToken
     this.renderedRecipeCount = end
-    this.setData({
-      visibleRecipes: this.data.visibleRecipes.concat(nextCards),
-      loadedRecipeCount: end,
-      totalRecipeCount: list.length
-    }, () => {
+    const appendPatch = { loadedRecipeCount: end, totalRecipeCount: list.length }
+    nextCards.forEach((card, offset) => { appendPatch[`visibleRecipes[${start + offset}]`] = card })
+    this.setData(appendPatch, () => {
       // 云端封面只对当前分页按需换取临时地址；未配置云开发时保持本地兜底图。
       imageService.hydrateRecipeCovers(nextRecipes, null, this.pageSize).then(hydratedRecipes => {
         if (renderToken !== this.renderToken) return
@@ -281,6 +315,7 @@ Page({
   },
 
   onSearchInput(event) {
+    this.filtersDirty = true
     this.setData({ searchQuery: event.detail.value })
     this.clearSearchTimer()
     this.searchTimer = setTimeout(() => {
@@ -412,6 +447,7 @@ Page({
     const combination = this.data.recommendation && this.data.recommendation.mealCombination || []
     if (!combination.length) return
     combination.forEach(item => storage.addRecipeToMealPlan(item.recipe.id))
+    this.refreshPlanCounts()
     wx.showToast({ title: '套餐已加入今日菜单', icon: 'success' })
   }
 })

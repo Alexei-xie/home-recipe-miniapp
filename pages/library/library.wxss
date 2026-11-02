@@ -119,3 +119,8 @@
 .danger-text {
   color: #b44335;
 }
+.library-filters { padding: 24rpx; margin-bottom: 28rpx; }
+.library-filter-row { display: flex; align-items: center; gap: 16rpx; margin-top: 16rpx; }
+.library-filter-row picker { flex: 1; min-width: 0; background: #edf3ed; border-radius: 14rpx; padding: 16rpx; color: #2f6f4e; font-size: 24rpx; }
+.library-filter-row picker view { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.library-filter-row > text { flex-shrink: 0; color: #93602e; font-size: 24rpx; padding: 12rpx 0; }

@@ -1,6 +1,7 @@
 const assert = require('assert')
 const health = require('../utils/health')
-const { BUILTIN_RECIPES, getBuiltinRecipe } = require('../data/recipes')
+const { BUILTIN_RECIPES } = require('../data/recipes')
+const { getBuiltinRecipe } = require('../features/data/recipe-details')
 const imageService = require('../utils/image-service')
 const nutrition = require('../features/utils/nutrition')
 const { FOOD_MICROS } = require('../features/data/food-micros')
@@ -346,7 +347,7 @@ function testStorageRules() {
 
   const storage = require('../utils/storage')
   storage.initStorage()
-  assert.strictEqual(storage.SCHEMA_VERSION, 14)
+  assert.strictEqual(storage.SCHEMA_VERSION, 15)
   assert.strictEqual(storage.getProfile().populationType, 'adult')
   assert.strictEqual(storage.getProfile().adultAgeConfirmed, false)
   assert.strictEqual(storage.getProfile().notPregnantConfirmed, false)
@@ -393,7 +394,7 @@ function testStorageRules() {
   assert.strictEqual(storage.getRecipe('community_test_1').publisherName, '投稿人')
   assert.strictEqual(storage.getCommunitySync().version, 3)
   storage.flushStateSync()
-  assert.strictEqual(memory[storage.COMMUNITY_STORAGE_KEY].length, 1)
+  assert.strictEqual(memory[storage.COMMUNITY_STORAGE_KEY].recipes.length, 1)
   assert.strictEqual(memory[storage.STORAGE_KEY].communityRecipes, undefined)
   storage.markCommunityNoticesSeen()
   assert(storage.getCommunitySync().noticeSeenAt > 0)
@@ -418,7 +419,7 @@ function testStorageRules() {
   storage.deleteCustomRecipe(withCover.id)
   assert(!files.has(localCover))
 
-  const builtin = storage.getRecipe('r001')
+  const builtin = getBuiltinRecipe('r001')
   const overrideCover = storage.saveRecipeImageFile('/tmp/selected-builtin-cover.jpg')
   const savedOverride = storage.saveBuiltinRecipeOverride(Object.assign({}, builtin, {
     name: '我的番茄炒蛋',
@@ -443,10 +444,10 @@ function testStorageRules() {
   storage.addRecipeToMealPlan('r001', '2026-07-29')
   storage.addRecipeToMealPlan('r001', '2026-07-29')
   assert.strictEqual(storage.getMealPlan('2026-07-29').filter(item => item.id === 'r001').length, 1)
-  storage.addRecipeToShoppingList(storage.getRecipe('r001'))
+  storage.addRecipeToShoppingList(getBuiltinRecipe('r001'))
   assert(storage.getShoppingList().length > 0)
   const shoppingItem = storage.getShoppingList()[0]
-  storage.addRecipeToShoppingList(Object.assign({}, storage.getRecipe('r001'), { name: '另一道测试菜' }))
+  storage.addRecipeToShoppingList(Object.assign({}, getBuiltinRecipe('r001'), { name: '另一道测试菜' }))
   assert.strictEqual(storage.getShoppingList().filter(item => item.name === shoppingItem.name).length, 1)
   storage.toggleShoppingItem(shoppingItem.id)
   assert.strictEqual(storage.getShoppingList().find(item => item.id === shoppingItem.id).checked, true)
